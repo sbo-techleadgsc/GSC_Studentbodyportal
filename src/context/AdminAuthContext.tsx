@@ -11,14 +11,13 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
 
-const DEMO_PASSCODE = 'gsc-sbo-2026' // change this, then tell your officers
 const SESSION_KEY = 'sbo_admin_session'
 
 interface AdminAuthValue {
   isAdmin: boolean
   isAuthenticated: boolean
   adminName: string | null
-  login: (passcode: string, name: string) => Promise<boolean>
+  login: (email: string, password: string, name: string) => Promise<boolean>
   requestMagicLink: (email: string, name?: string) => Promise<boolean>
   logout: () => void
 }
@@ -67,36 +66,27 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (passcode: string, name: string) => {
-    const normalized = passcode.trim()
-    if (!normalized) return false
+  const login = async (email: string, password: string, name: string) => {
+    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedPassword = password.trim()
+    if (!normalizedEmail || !normalizedPassword) return false
 
-    if (supabase) {
-      const looksLikeEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)
-      if (looksLikeEmail) {
-        const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined
-        const { error } = await supabase.auth.signInWithOtp({
-          email: normalized,
-          options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
-        })
+    if (!supabase) return false
 
-        if (!error) {
-          setIsAuthenticated(true)
-          setAdminName(name || normalized)
-          return true
-        }
-      }
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: normalizedEmail,
+      password: normalizedPassword,
+    })
+
+    if (error || !data.session) {
+      return false
     }
 
-    if (normalized === DEMO_PASSCODE) {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ name: name || 'Admin' }))
-      setIsAdmin(true)
-      setIsAuthenticated(true)
-      setAdminName(name || 'Admin')
-      return true
-    }
-
-    return false
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ name: name || data.user.email || 'Admin' }))
+    setIsAdmin(true)
+    setIsAuthenticated(true)
+    setAdminName(name || data.user.email || 'Admin')
+    return true
   }
 
   const requestMagicLink = async (email: string, name?: string) => {

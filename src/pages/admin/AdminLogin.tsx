@@ -9,7 +9,7 @@ export default function AdminLogin() {
   const { isAdmin, login } = useAdminAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [passcode, setPasscode] = useState('')
+  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -20,14 +20,9 @@ export default function AdminLogin() {
     setError('')
     setMessage('')
 
-    const ok = await login(passcode || email, name || 'Admin')
+    const ok = await login(email, password, name || 'Admin')
     if (!ok) {
-      setError('Incorrect passcode or email. Use the demo passcode or a valid Supabase email.')
-      return
-    }
-
-    if (email) {
-      setMessage('Check your inbox for the sign-in link to finish access.')
+      setError('Incorrect email or password. Use a valid Supabase admin account.')
       return
     }
 
@@ -51,7 +46,7 @@ export default function AdminLogin() {
             <Field label="Your Name">
               <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Santos" />
             </Field>
-            <Field label="Admin Email (optional for magic link)">
+            <Field label="Admin Email">
               <Input
                 type="email"
                 value={email}
@@ -59,11 +54,11 @@ export default function AdminLogin() {
                 placeholder="officer@school.edu"
               />
             </Field>
-            <Field label="Demo Passcode (optional fallback)">
+            <Field label="Password">
               <Input
                 type="password"
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
               />
             </Field>
@@ -72,7 +67,7 @@ export default function AdminLogin() {
             <Button type="submit" className="w-full">Sign In</Button>
           </form>
           <p className="mt-4 text-center text-xs text-ink-400">
-            Use an email for a Supabase magic link, or the demo passcode for local testing.
+            Sign in with your Supabase admin email and password.
           </p>
         </Card>
       </div>
