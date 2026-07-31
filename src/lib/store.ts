@@ -27,7 +27,7 @@ import {
   seedNews,
   seedPolls,
 } from '@/data/seed'
-import { supabase } from './supabase'
+import { isSupabaseConfigured, supabase } from './supabase'
 
 const KEYS = {
   officers: 'sbo_officers',
@@ -281,6 +281,10 @@ function setupRealtime() {
 }
 
 setupRealtime()
+
+if (typeof window !== 'undefined' && isSupabaseConfigured) {
+  console.info('[store] Supabase is active; data will come from the remote database when the schema exists.')
+}
 
 // ── Officers ───────────────────────────────────────────────
 export const officersDb = {

@@ -13,3 +13,7 @@ export const supabase = normalizedSupabaseUrl && supabaseAnonKey && !normalizedS
   : null
 
 export const isSupabaseConfigured = Boolean(supabase)
+
+if (typeof window !== 'undefined') {
+  console.info(`[supabase] ${isSupabaseConfigured ? 'configured' : 'not configured'} (${import.meta.env.VITE_SUPABASE_URL ? 'env present' : 'env missing'})`)
+}
