@@ -22,6 +22,7 @@ import AdminUpdates from '@/pages/admin/AdminUpdates'
 import AdminReports from '@/pages/admin/AdminReports'
 import AdminNews from '@/pages/admin/AdminNews'
 import AdminPolls from '@/pages/admin/AdminPolls'
+import NotFound from '@/pages/NotFound'
 
 function SecretShortcut() {
   const navigate = useNavigate()
@@ -74,6 +75,7 @@ function AppContent() {
         <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
         <Route path="/admin/news" element={<AdminGuard><AdminNews /></AdminGuard>} />
         <Route path="/admin/polls" element={<AdminGuard><AdminPolls /></AdminGuard>} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </>
   )
