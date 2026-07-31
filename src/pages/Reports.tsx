@@ -23,24 +23,34 @@ export default function Reports() {
   const [content, setContent] = useState('')
   const [submitted, setSubmitted] = useState<Report | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     if (!category || !content.trim()) return
+
     setSubmitting(true)
-    const report = await reportsDb.submit({
-      visibility,
-      fullName: visibility === 'public' ? fullName : undefined,
-      email: visibility === 'public' ? email : undefined,
-      category,
-      content,
-    })
-    setSubmitting(false)
-    setSubmitted(report)
-    setFullName('')
-    setEmail('')
-    setCategory('')
-    setContent('')
+    setSubmitError(null)
+
+    try {
+      const report = await reportsDb.submit({
+        visibility,
+        fullName: visibility === 'public' ? fullName : undefined,
+        email: visibility === 'public' ? email : undefined,
+        category,
+        content,
+      })
+      setSubmitted(report)
+      setFullName('')
+      setEmail('')
+      setCategory('')
+      setContent('')
+    } catch (error) {
+      setSubmitted(null)
+      setSubmitError(error instanceof Error ? error.message : 'Unable to submit report right now.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -133,6 +143,12 @@ export default function Reports() {
                     placeholder="Describe your concern..."
                   />
                 </Field>
+
+                {submitError && (
+                  <div className="rounded-app border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+                    {submitError}
+                  </div>
+                )}
 
                 <Button type="submit" disabled={submitting} className="w-full">
                   {submitting ? 'Submitting...' : 'Submit Report'}

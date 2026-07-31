@@ -479,7 +479,11 @@ export const reportsDb = {
   async list(): Promise<Report[]> {
     if (supabase) {
       const { data, error } = await supabase.from('reports').select('*')
-      if (!error && data && data.length > 0) {
+      if (error) {
+        console.error('[reportsDb] list failed', error)
+        return []
+      }
+      if (data) {
         return data.map(toCamelReport).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       }
     }
@@ -512,10 +516,13 @@ export const reportsDb = {
         .select()
         .single()
 
-      if (!error && data) {
-        dispatchChange(KEYS.reports)
-        return toCamelReport(data)
+      if (error) {
+        console.error('[reportsDb] submit failed', error)
+        throw new Error(error.message || 'Unable to submit report right now.')
       }
+
+      dispatchChange(KEYS.reports)
+      return toCamelReport(data)
     }
 
     const all = read(KEYS.reports, seedReports)
@@ -526,10 +533,12 @@ export const reportsDb = {
   async updateStatus(id: string, status: Report['status'], adminNotes?: string): Promise<void> {
     if (supabase) {
       const { error } = await supabase.from('reports').update({ status, admin_notes: adminNotes }).eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.reports)
-        return
+      if (error) {
+        console.error('[reportsDb] updateStatus failed', error)
+        throw new Error(error.message || 'Unable to update report status.')
       }
+      dispatchChange(KEYS.reports)
+      return
     }
 
     const all = read(KEYS.reports, seedReports)
@@ -542,9 +551,14 @@ export const reportsDb = {
   async findByTrackingCode(code: string): Promise<Report | undefined> {
     if (supabase) {
       const { data, error } = await supabase.from('reports').select('*').eq('tracking_code', code.trim())
-      if (!error && data && data.length > 0) {
+      if (error) {
+        console.error('[reportsDb] findByTrackingCode failed', error)
+        return undefined
+      }
+      if (data && data.length > 0) {
         return toCamelReport(data[0])
       }
+      return undefined
     }
     const all = read(KEYS.reports, seedReports)
     return all.find((r) => r.trackingCode.toLowerCase() === code.trim().toLowerCase())
@@ -552,10 +566,12 @@ export const reportsDb = {
   async remove(id: string): Promise<void> {
     if (supabase) {
       const { error } = await supabase.from('reports').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.reports)
-        return
+      if (error) {
+        console.error('[reportsDb] remove failed', error)
+        throw new Error(error.message || 'Unable to delete report.')
       }
+      dispatchChange(KEYS.reports)
+      return
     }
     write(KEYS.reports, read(KEYS.reports, seedReports).filter((r) => r.id !== id))
   },
