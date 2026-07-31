@@ -10,18 +10,18 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-navy-900 text-white hover:bg-navy-800 active:bg-navy-950',
-  secondary: 'bg-white text-navy-900 hover:bg-navy-50 shadow-sm',
-  outline: 'bg-transparent border border-navy-900/20 text-navy-900 hover:bg-navy-50',
+  primary: 'bg-navy-900 text-white hover:bg-navy-800 active:bg-navy-950 shadow-[0_10px_25px_rgba(10,36,99,0.16)]',
+  secondary: 'bg-white text-navy-900 hover:bg-navy-50 active:bg-navy-100 shadow-sm border border-navy-900/10',
+  outline: 'bg-white/90 border border-navy-900/15 text-navy-900 hover:bg-navy-50 active:bg-navy-100',
   ghost: 'bg-transparent text-navy-900 hover:bg-navy-50',
-  danger: 'bg-danger-600 text-white hover:opacity-90',
+  danger: 'bg-danger-600 text-white hover:opacity-90 shadow-[0_10px_25px_rgba(194,43,62,0.16)]',
 }
 
 export function Button({ variant = 'primary', size = 'md', className, ...props }: ButtonProps) {
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-app font-semibold transition-colors disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center gap-2 rounded-app font-semibold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none',
         size === 'md' ? 'px-5 py-2.5 text-sm' : 'px-3.5 py-1.5 text-xs',
         variantClasses[variant],
         className
@@ -38,7 +38,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Card({ className, children, ...rest }: CardProps) {
   return (
     <div
-      className={clsx('rounded-app bg-white shadow-[0_1px_2px_rgba(10,36,99,0.06),0_1px_12px_rgba(10,36,99,0.04)]', className)}
+      className={clsx('glass-surface rounded-app transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(10,36,99,0.08)]', className)}
       {...rest}
     >
       {children}
@@ -93,7 +93,7 @@ export function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; 
 // ── Empty state ─────────────────────────────────────────────
 export function EmptyState({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle?: string }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-app border border-dashed border-navy-900/15 bg-white px-6 py-16 text-center">
+    <div className="glass-surface flex flex-col items-center justify-center gap-3 rounded-app border border-white/60 px-6 py-16 text-center">
       <div className="text-navy-900/30">{icon}</div>
       <p className="font-semibold text-ink-900">{title}</p>
       {subtitle && <p className="max-w-sm text-sm text-ink-400">{subtitle}</p>}

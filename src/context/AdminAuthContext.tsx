@@ -19,6 +19,7 @@ interface AdminAuthValue {
   adminName: string | null
   login: (email: string, password: string, name: string) => Promise<boolean>
   requestMagicLink: (email: string, name?: string) => Promise<boolean>
+  signUpPublicUser: (email: string, password: string, name?: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -94,7 +95,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     if (!normalized || !normalized.includes('@')) return false
 
     if (supabase) {
-      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/admin` : undefined
+      const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}` : undefined
       const { error } = await supabase.auth.signInWithOtp({
         email: normalized,
         options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
@@ -110,6 +111,31 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     return false
   }
 
+  const signUpPublicUser = async (email: string, password: string, name?: string) => {
+    const normalizedEmail = email.trim().toLowerCase()
+    const normalizedPassword = password.trim()
+    if (!normalizedEmail || !normalizedPassword || !supabase) return false
+
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: normalizedPassword,
+      options: {
+        data: { full_name: name || normalizedEmail },
+      },
+    })
+
+    if (error || !data.session) {
+      return false
+    }
+
+    const publicName = name || data.user?.email || 'Public User'
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ name: publicName }))
+    setIsAdmin(true)
+    setIsAuthenticated(true)
+    setAdminName(publicName)
+    return true
+  }
+
   const logout = () => {
     if (supabase) {
       void supabase.auth.signOut()
@@ -121,7 +147,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AdminAuthContext.Provider value={{ isAdmin, isAuthenticated, adminName, login, requestMagicLink, logout }}>
+    <AdminAuthContext.Provider value={{ isAdmin, isAuthenticated, adminName, login, requestMagicLink, signUpPublicUser, logout }}>
       {children}
     </AdminAuthContext.Provider>
   )

@@ -64,7 +64,18 @@ function dispatchChange(detail: string = 'all') {
 
 export const bus = new EventTarget()
 
-const uid = () => Math.random().toString(36).slice(2, 10)
+const uid = () => {
+  if (typeof globalThis !== 'undefined' && typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID()
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (char) => {
+    const random = Math.floor(Math.random() * 16)
+    const value = char === 'x' ? random : (random & 0x3) | 0x8
+    return value.toString(16)
+  })
+}
+
 const nowISO = () => new Date().toISOString().slice(0, 10)
 
 function toCamelOfficer(row: any): Officer {

@@ -109,10 +109,15 @@ create policy "public read" on updates for select using (true);
 create policy "public read" on news for select using (true);
 create policy "public read" on polls for select using (true);
 create policy "public read" on poll_options for select using (true);
+create policy "public read" on reports for select using (true);
 
--- Reports: anyone can insert (submit), only admins can read/update all.
+-- Reports: anyone can insert (submit), and authenticated users can update/delete them.
 create policy "anyone can submit a report" on reports for insert with check (true);
+create policy "authenticated users can update reports" on reports for update using (auth.role() = 'authenticated');
+create policy "authenticated users can delete reports" on reports for delete using (auth.role() = 'authenticated');
 
--- Voting: requires a logged-in student; one row per (poll, user) enforced above.
-create policy "logged-in users can vote" on poll_votes
+-- Voting: allow signed-in public users to vote; one row per (poll, user) enforced above.
+create policy "public users can vote" on poll_votes
   for insert with check (auth.uid() = user_id);
+create policy "public users can read their own votes" on poll_votes
+  for select using (auth.uid() = user_id);

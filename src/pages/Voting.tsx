@@ -13,8 +13,10 @@ import type { Poll } from '@/lib/types'
 
 export default function Voting() {
   const [polls, reload] = useLiveData(pollsDb.list)
-  const { isAuthenticated, requestMagicLink } = useAdminAuth()
+  const { isAuthenticated, signUpPublicUser, requestMagicLink } = useAdminAuth()
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
   const openPolls = polls?.filter((p) => p.isOpen) ?? []
@@ -25,18 +27,23 @@ export default function Voting() {
     setAuthError('')
     setAuthMessage('')
 
-    if (!email.trim()) {
-      setAuthError('Please enter your email to receive a sign-in link.')
+    if (!email.trim() || !password.trim()) {
+      setAuthError('Please enter your email and password.')
       return
     }
 
-    const ok = await requestMagicLink(email)
+    const ok = await signUpPublicUser(email, password, name || undefined)
     if (!ok) {
-      setAuthError('We could not send a sign-in link. Please try again.')
+      const magicOk = await requestMagicLink(email, name || undefined)
+      if (!magicOk) {
+        setAuthError('We could not sign you in. Please try again.')
+        return
+      }
+      setAuthMessage(`Check ${email} for your sign-in link.`)
       return
     }
 
-    setAuthMessage(`Check ${email} for your sign-in link.`)
+    setAuthMessage(`Welcome ${name || email}! You can vote now.`)
   }
 
   return (
@@ -58,16 +65,22 @@ export default function Voting() {
 
         {!isAuthenticated && (
           <Card className="mt-8 p-6">
-            <h3 className="text-base font-bold text-ink-900">Sign in to vote</h3>
-            <p className="mt-1 text-sm text-ink-600">Use your email to receive a Supabase magic link, then return here to cast your vote.</p>
+            <h3 className="text-base font-bold text-ink-900">Sign in or sign up to vote</h3>
+            <p className="mt-1 text-sm text-ink-600">Create a simple public account to join voting and report submissions.</p>
             <form onSubmit={handleAuthSubmit} className="mt-4 space-y-3">
+              <Field label="Your name (optional)">
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Juan dela Cruz" />
+              </Field>
               <Field label="Your email">
                 <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@school.edu" />
+              </Field>
+              <Field label="Password">
+                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
               </Field>
               {authError && <p className="text-sm text-danger-600">{authError}</p>}
               {authMessage && <p className="text-sm text-success-600">{authMessage}</p>}
               <button type="submit" className="rounded-app bg-navy-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy-800">
-                Send sign-in link
+                Create account / sign in
               </button>
             </form>
           </Card>

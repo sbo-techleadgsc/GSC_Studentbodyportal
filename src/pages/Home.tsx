@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom'
 import {
   ArrowRight,
   Flag,
-  BookOpen,
   Users,
   CheckSquare,
   DollarSign,
@@ -13,7 +12,6 @@ import {
   HeartHandshake,
   Scale,
 } from 'lucide-react'
-import { PageHero } from '@/components/layout/PageHero'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Button, Card, Badge, StatusPill } from '@/components/ui/Primitives'
 import { siteConfig } from '@/config/site'
@@ -58,88 +56,61 @@ export default function Home() {
       {/* ── Hero ─────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl mx-4 sm:mx-6 mt-4 sm:mt-6">
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-sm rounded-3xl"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-[1px] rounded-3xl"
           style={{ backgroundImage: `url(${gscLogo})` }}
         >
-          <div className="absolute inset-0 bg-navy-900/60 rounded-3xl" />
+          <div className="absolute inset-0 bg-navy-900/65 rounded-3xl" />
         </div>
         <div className="cross-emblem pointer-events-none absolute -right-16 -top-10 h-96 w-96 bg-white/[0.05] sm:h-[28rem] sm:w-[28rem]" aria-hidden />
         <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-12 sm:pb-20 sm:pt-16">
-          <LiveBadge>Official SBO Web Portal &middot; {siteConfig.academicYear}</LiveBadge>
+          <div className="max-w-3xl">
+            <div className="inline-flex flex-col rounded-[1.6rem] border border-white/15 bg-white/10 px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-md sm:px-6 sm:py-5">
+              <LiveBadge>Official SBO Web Portal &middot; {siteConfig.academicYear}</LiveBadge>
 
-          <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
-            {siteConfig.schoolName}
-            <br />
-            <span className="text-gold-400">{siteConfig.orgName}</span>
-          </h1>
+              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
+                {siteConfig.schoolName}
+                <br />
+                <span className="text-gold-400">{siteConfig.orgName}</span>
+              </h1>
 
-          <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-navy-100/80 sm:text-base">
-            {siteConfig.tagline}
-          </p>
+              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-navy-100/80 sm:text-base">
+                {siteConfig.tagline}
+              </p>
+            </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/officials">
-              <Button variant="secondary" className="gap-2">
-                Meet the Officials <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/reports">
-              <Button variant="outline" className="gap-2 border-white/25 text-white hover:bg-white/10">
-                <Flag className="h-4 w-4" /> File a Report
-              </Button>
-            </Link>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
+              <Link to="/officials" className="w-full sm:w-[calc(50%-0.5rem)]">
+                <Button
+                  variant="secondary"
+                  className="w-full justify-between rounded-[1.15rem] border border-white/20 bg-white/15 px-4 py-3.5 text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/25"
+                >
+                  <span className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Meet the Officials
+                  </span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/reports" className="w-full sm:w-[calc(50%-0.5rem)]">
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between rounded-[1.15rem] border border-white/30 !bg-white/20 px-4 py-3.5 !text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:!bg-white/30"
+                >
+                  <span className="flex items-center gap-2">
+                    <Flag className="h-4 w-4" />
+                    File a Report
+                  </span>
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-6xl px-6 mx-4 sm:mx-6 lg:mx-auto">
-        {/* ── What this portal offers ─────────────────────── */}
-        <section className="py-14 sm:py-16">
-          <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">What This Portal Offers</h2>
-          <p className="mt-2 max-w-xl text-ink-600">Seven dedicated sections - everything about your student government, in one place.</p>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ to, icon: Icon, title, desc }) => (
-              <Link key={to} to={to}>
-                <Card className="group h-full p-6 transition-transform hover:-translate-y-0.5 rounded-2xl">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-100 text-navy-900 transition-colors group-hover:bg-navy-900 group-hover:text-white">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <p className="mt-4 font-bold text-ink-900">{title}</p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{desc}</p>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Values ───────────────────────────────────────── */}
-        <section className="pb-14 sm:pb-16">
-          <div className="grid gap-4 sm:grid-cols-3">
-            {VALUES.map(({ icon: Icon, title, desc }) => (
-              <Card key={title} className="p-6 rounded-2xl">
-                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-900 text-white">
-                  <Icon className="h-5 w-5" />
-                </span>
-                <p className="mt-4 font-bold text-ink-900">{title}</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{desc}</p>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* ── Quick stats ──────────────────────────────────── */}
-        <section className="pb-14 sm:pb-16">
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard value={String(officers?.length ?? '—')} label="Elected Officers" />
-            <StatCard value={String(activePromises)} label="Active Promises" />
-            <StatCard value={pesoCompact(totalBudget)} label="Annual Budget" />
-            <StatCard value={String(openPolls.length)} label="Open Polls" />
-          </div>
-        </section>
-
         {/* ── At a glance dashboard ────────────────────────── */}
-        <section className="pb-16 sm:pb-20">
+        <section className="py-14 sm:py-16">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">At a Glance</h2>
           <p className="mt-2 text-ink-600">The latest from your student government, updated live.</p>
 
@@ -237,26 +208,52 @@ export default function Home() {
           )}
         </section>
 
-        {/* ── Credit ───────────────────────────────────────── */}
-        <div className="py-14 sm:py-16 mx-4 sm:mx-6">
-          <Card className="border border-gold-400/30 bg-gold-50 !shadow-none p-6 rounded-3xl">
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold-100 text-gold-600">
-                <BookOpen className="h-5 w-5" />
-              </span>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-ink-900 break-words text-base sm:text-lg">
-                  A Project by the SBO Public Information Office
-                </p>
-                <p className="mt-1 text-sm leading-relaxed text-ink-600 break-words">
-                  {siteConfig.creditBlurb} Built by{' '}
-                  <span className="font-semibold text-ink-900">{siteConfig.creatorName}</span>,{' '}
-                  {siteConfig.creatorRole} {siteConfig.academicYear}. Maintained by the current SBO team.
-                </p>
-              </div>
-            </div>
-          </Card>
-        </div>
+        {/* ── What this portal offers ─────────────────────── */}
+        <section className="py-14 sm:py-16">
+          <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">What This Portal Offers</h2>
+          <p className="mt-2 max-w-xl text-ink-600">Seven dedicated sections - everything about your student government, in one place.</p>
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map(({ to, icon: Icon, title, desc }) => (
+              <Link key={to} to={to}>
+                <Card className="group h-full p-6 transition-transform hover:-translate-y-0.5 rounded-2xl">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-100 text-navy-900 transition-colors group-hover:bg-navy-900 group-hover:text-white">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <p className="mt-4 font-bold text-ink-900">{title}</p>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{desc}</p>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Values ───────────────────────────────────────── */}
+        <section className="pb-14 sm:pb-16">
+          <div className="grid gap-4 sm:grid-cols-3">
+            {VALUES.map(({ icon: Icon, title, desc }) => (
+              <Card key={title} className="p-6 rounded-2xl">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-navy-900 text-white">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <p className="mt-4 font-bold text-ink-900">{title}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{desc}</p>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* ── Quick stats ──────────────────────────────────── */}
+        <section className="pb-14 sm:pb-16">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard value={String(officers?.length ?? '—')} label="Elected Officers" />
+            <StatCard value={String(activePromises)} label="Active Promises" />
+            <StatCard value={pesoCompact(totalBudget)} label="Annual Budget" />
+            <StatCard value={String(openPolls.length)} label="Open Polls" />
+          </div>
+        </section>
+
+
       </div>
     </div>
   )
