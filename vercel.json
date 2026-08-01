@@ -1,38 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/((?!under-maintenance.html|gsc_logo.svg|favicon.svg|icons.svg).*)",
-      "has": [
-        {
-          "type": "env",
-          "key": "EDGE_CONFIG_IS_IN_MAINTENANCE",
-          "value": "true"
-        }
-      ],
-      "destination": "/under-maintenance.html"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "DENY"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
     }
   ]
 }
