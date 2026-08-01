@@ -33,16 +33,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem(SESSION_KEY)
     if (saved) {
-      const parsed = JSON.parse(saved)
-      setIsAdmin(true)
-      setIsAuthenticated(true)
-      setAdminName(parsed.name)
+      try {
+        const parsed = JSON.parse(saved)
+        setIsAdmin(true)
+        setIsAuthenticated(true)
+        setAdminName(parsed.name)
+      } catch (e) {
+        console.error('[AdminAuthContext] Failed to parse saved session', e)
+        localStorage.removeItem(SESSION_KEY)
+      }
     }
 
     if (!supabase) return
 
     let active = true
 
+    // Check initial session
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return
       const session = data.session
@@ -50,15 +56,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         setIsAdmin(true)
         setIsAuthenticated(true)
         setAdminName(session.user.email ?? 'Admin')
+        // Also save to localStorage for persistence
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ name: session.user.email ?? 'Admin' }))
       }
     })
 
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       if (!active) return
+      console.log('[AdminAuthContext] Auth state changed:', _event, session ? 'authenticated' : 'not authenticated')
       setIsAuthenticated(Boolean(session))
       setIsAdmin(Boolean(session))
       setAdminName(session?.user?.email ?? null)
-      if (!session) localStorage.removeItem(SESSION_KEY)
+      if (session) {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ name: session.user.email ?? 'Admin' }))
+      } else {
+        localStorage.removeItem(SESSION_KEY)
+      }
     })
 
     return () => {
@@ -79,7 +92,13 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       password: normalizedPassword,
     })
 
-    if (error || !data.session) {
+    if (error) {
+      console.error('[login] Error:', error.message)
+      return false
+    }
+
+    if (!data.session) {
+      console.error('[login] No session returned')
       return false
     }
 
@@ -101,11 +120,14 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
         options: redirectTo ? { emailRedirectTo: redirectTo } : undefined,
       })
 
-      if (!error) {
-        setIsAuthenticated(true)
-        setAdminName(name || normalized)
-        return true
+      if (error) {
+        console.error('[requestMagicLink] Error:', error.message)
+        return false
       }
+
+      // Don't set authenticated state here - user needs to click the link first
+      // The auth state change listener will handle actual authentication
+      return true
     }
 
     return false
@@ -124,15 +146,25 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       },
     })
 
-    if (error || !data.session) {
+    if (error) {
+      console.error('[signUpPublicUser] Error:', error.message)
       return false
     }
 
+    // If email confirmation is enabled, session will be null
+    // In that case, return false so the UI can fall back to magic link
+    if (!data.session) {
+      console.log('[signUpPublicUser] No session - email confirmation may be required')
+      return false
+    }
+
+    // Session exists - user is signed in
     const publicName = name || data.user?.email || 'Public User'
     localStorage.setItem(SESSION_KEY, JSON.stringify({ name: publicName }))
     setIsAdmin(true)
     setIsAuthenticated(true)
     setAdminName(publicName)
+    console.log('[signUpPublicUser] User signed up successfully:', publicName)
     return true
   }
 

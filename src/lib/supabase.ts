@@ -7,7 +7,8 @@ const normalizedSupabaseUrl = rawSupabaseUrl?.trim().replace(/\/+$/, '').replace
 export const supabase = normalizedSupabaseUrl && supabaseAnonKey && !normalizedSupabaseUrl.includes('paste_your_supabase_project_url_here')
   ? createClient(normalizedSupabaseUrl, supabaseAnonKey, {
       auth: {
-        persistSession: false,
+        persistSession: true,
+        autoRefreshToken: true,
       },
     })
   : null

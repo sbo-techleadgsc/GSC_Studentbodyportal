@@ -7,6 +7,7 @@ import {
   Flag,
   Newspaper,
   Vote,
+  User,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -25,4 +26,5 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/reports', label: 'Reports', icon: Flag },
   { to: '/news', label: 'News', icon: Newspaper },
   { to: '/voting', label: 'Voting', icon: Vote },
+  { to: '/account', label: 'Account', icon: User },
 ]

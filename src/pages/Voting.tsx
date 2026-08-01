@@ -1,9 +1,9 @@
-import { useState, type FormEvent } from 'react'
-import { Vote as VoteIcon, CheckCircle2, Users } from 'lucide-react'
+import { useState } from 'react'
+import { Vote as VoteIcon, CheckCircle2, Users, Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { PageHero } from '@/components/layout/PageHero'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Card, Badge, EmptyState } from '@/components/ui/Primitives'
-import { Field, Input } from '@/components/ui/Form'
 import { useLiveData } from '@/lib/hooks'
 import { pollsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
@@ -13,37 +13,17 @@ import type { Poll } from '@/lib/types'
 
 export default function Voting() {
   const [polls, reload] = useLiveData(pollsDb.list)
-  const { isAuthenticated, signUpPublicUser, requestMagicLink } = useAdminAuth()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [authMessage, setAuthMessage] = useState('')
-  const [authError, setAuthError] = useState('')
+  const { isAuthenticated } = useAdminAuth()
+  const [authPrompt, setAuthPrompt] = useState(false)
   const openPolls = polls?.filter((p) => p.isOpen) ?? []
   const closedPolls = polls?.filter((p) => !p.isOpen) ?? []
 
-  async function handleAuthSubmit(e: FormEvent) {
-    e.preventDefault()
-    setAuthError('')
-    setAuthMessage('')
+  function handleRequireAuth() {
+    setAuthPrompt(true)
+  }
 
-    if (!email.trim() || !password.trim()) {
-      setAuthError('Please enter your email and password.')
-      return
-    }
-
-    const ok = await signUpPublicUser(email, password, name || undefined)
-    if (!ok) {
-      const magicOk = await requestMagicLink(email, name || undefined)
-      if (!magicOk) {
-        setAuthError('We could not sign you in. Please try again.')
-        return
-      }
-      setAuthMessage(`Check ${email} for your sign-in link.`)
-      return
-    }
-
-    setAuthMessage(`Welcome ${name || email}! You can vote now.`)
+  function dismissAuthPrompt() {
+    setAuthPrompt(false)
   }
 
   return (
@@ -63,32 +43,29 @@ export default function Voting() {
           </div>
         )}
 
-        {!isAuthenticated && (
-          <Card className="mt-8 p-6">
-            <h3 className="text-base font-bold text-ink-900">Sign in or sign up to vote</h3>
-            <p className="mt-1 text-sm text-ink-600">Create a simple public account to join voting and report submissions.</p>
-            <form onSubmit={handleAuthSubmit} className="mt-4 space-y-3">
-              <Field label="Your name (optional)">
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Juan dela Cruz" />
-              </Field>
-              <Field label="Your email">
-                <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@school.edu" />
-              </Field>
-              <Field label="Password">
-                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-              </Field>
-              {authError && <p className="text-sm text-danger-600">{authError}</p>}
-              {authMessage && <p className="text-sm text-success-600">{authMessage}</p>}
-              <button type="submit" className="rounded-app bg-navy-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy-800">
-                Create account / sign in
-              </button>
-            </form>
+        {!isAuthenticated && openPolls.length > 0 && (
+          <Card className="mt-8 p-6 border-gold-200 bg-gold-50/50">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold-100">
+                <Lock className="h-5 w-5 text-gold-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-ink-900">Sign in required to vote</h3>
+                <p className="mt-1 text-sm text-ink-600">Create a quick account to participate in polls and submit reports.</p>
+                <Link
+                  to="/account"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-app bg-navy-900 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy-800"
+                >
+                  Go to Account page
+                </Link>
+              </div>
+            </div>
           </Card>
         )}
 
         <div className="mt-8 space-y-5">
           {openPolls.map((poll) => (
-            <PollCard key={poll.id} poll={poll} canVote={isAuthenticated} onRequireAuth={() => setAuthError('Please sign in with your email before voting.')} onVoted={reload} />
+            <PollCard key={poll.id} poll={poll} canVote={isAuthenticated} onRequireAuth={handleRequireAuth} onVoted={reload} />
           ))}
         </div>
 
@@ -97,18 +74,49 @@ export default function Voting() {
             <h3 className="text-lg font-bold text-ink-900">Past Polls</h3>
             <div className="mt-4 space-y-4">
               {closedPolls.map((poll) => (
-                <PollCard key={poll.id} poll={poll} closed canVote={isAuthenticated} onRequireAuth={() => setAuthError('Please sign in with your email before voting.')} onVoted={reload} />
+                <PollCard key={poll.id} poll={poll} closed canVote={isAuthenticated} onRequireAuth={handleRequireAuth} onVoted={reload} />
               ))}
             </div>
           </div>
         )}
       </div>
+
+      {authPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-navy-900/50 p-4">
+          <Card className="w-full max-w-md p-6">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold-100">
+                <Lock className="h-5 w-5 text-gold-700" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-base font-bold text-ink-900">Sign in required</h3>
+                <p className="mt-1 text-sm text-ink-600">You need to sign in to vote on polls.</p>
+                <div className="mt-4 flex gap-2">
+                  <Link
+                    to="/account"
+                    className="flex-1 rounded-app bg-navy-900 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-navy-800"
+                  >
+                    Go to Account
+                  </Link>
+                  <button
+                    onClick={dismissAuthPrompt}
+                    className="rounded-app border border-navy-900/10 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-navy-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
 
 function PollCard({ poll, closed, canVote, onRequireAuth, onVoted }: { poll: Poll; closed?: boolean; canVote: boolean; onRequireAuth: () => void; onVoted: () => void }) {
   const [myVote, setMyVote] = useState<string | undefined>(pollsDb.getMyVote(poll.id))
+  const [isVoting, setIsVoting] = useState(false)
   const total = poll.options.reduce((s, o) => s + o.votes, 0)
 
   async function vote(optionId: string) {
@@ -116,11 +124,17 @@ function PollCard({ poll, closed, canVote, onRequireAuth, onVoted }: { poll: Pol
       onRequireAuth()
       return
     }
-    if (myVote || closed) return
+    if (myVote || closed || isVoting) return
+    
+    setIsVoting(true)
     const res = await pollsDb.vote(poll.id, optionId)
+    setIsVoting(false)
+    
     if (res.ok) {
       setMyVote(optionId)
       onVoted()
+    } else {
+      console.error('[PollCard] Vote failed:', res.reason)
     }
   }
 
@@ -147,10 +161,15 @@ function PollCard({ poll, closed, canVote, onRequireAuth, onVoted }: { poll: Pol
               <button
                 key={opt.id}
                 onClick={() => vote(opt.id)}
-                className="flex w-full items-center justify-between rounded-app border border-navy-900/10 px-4 py-3 text-left text-sm font-semibold text-ink-900 transition-colors hover:border-navy-900/30 hover:bg-navy-50"
+                disabled={isVoting}
+                className={clsx(
+                  'flex w-full items-center justify-between rounded-app border border-navy-900/10 px-4 py-3 text-left text-sm font-semibold transition-colors',
+                  isVoting ? 'opacity-50 cursor-not-allowed' : 'hover:border-navy-900/30 hover:bg-navy-50',
+                  'text-ink-900'
+                )}
               >
                 {opt.label}
-                <span className="text-xs font-normal text-ink-400">Tap to vote</span>
+                <span className="text-xs font-normal text-ink-400">{isVoting ? 'Voting...' : 'Tap to vote'}</span>
               </button>
             )
           }
