@@ -50,12 +50,7 @@ export default function Account() {
 
     const ok = await signUpPublicUser(email, password, name || undefined)
     if (!ok) {
-      const magicOk = await requestMagicLink(email, name || undefined)
-      if (!magicOk) {
-        setAuthError('We could not sign you in. Please check your email and password, or try again later.')
-        return
-      }
-      setAuthMessage(`Check ${email} for your sign-in link. Click the link in the email to complete sign-in.`)
+      setAuthError('We could not sign you in. Please check your email and password, or try again later.')
       return
     }
 

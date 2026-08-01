@@ -143,6 +143,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       password: normalizedPassword,
       options: {
         data: { full_name: name || normalizedEmail },
+        emailConfirmTo: false, // Disable email confirmation - user signs in immediately
       },
     })
 
@@ -151,10 +152,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    // If email confirmation is enabled, session will be null
-    // In that case, return false so the UI can fall back to magic link
+    // Session should now exist since we disabled email confirmation
     if (!data.session) {
-      console.log('[signUpPublicUser] No session - email confirmation may be required')
+      console.error('[signUpPublicUser] No session even with emailConfirmTo: false')
       return false
     }
 
