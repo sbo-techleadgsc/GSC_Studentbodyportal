@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic"; // Bypasses Next.js & Vercel layout caches
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
 import { AdminAuthProvider } from '@/context/AdminAuthContext'
 import { PublicLayout } from '@/components/layout/PublicLayout'
