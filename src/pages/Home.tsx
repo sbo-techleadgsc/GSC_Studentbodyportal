@@ -11,7 +11,9 @@ import {
   ShieldCheck,
   HeartHandshake,
   Scale,
+  MessageSquare,
 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Button, Card, Badge, StatusPill } from '@/components/ui/Primitives'
 import { siteConfig } from '@/config/site'
@@ -29,6 +31,7 @@ const FEATURES = [
   { to: '/reports', icon: Flag, title: 'Student Reports', desc: 'Submit concerns publicly or anonymously, and track the status yourself.' },
   { to: '/news', icon: Newspaper, title: 'School News', desc: 'Official announcements straight from the student body organization.' },
   { to: '/voting', icon: Vote, title: 'Public Voting', desc: 'Have a say on themes, events, and priorities - results shown live.' },
+  { to: '/community', icon: MessageSquare, title: 'Community Wall', desc: 'Share your thoughts on the freedom wall - a space for positive expression and connection.' },
 ]
 
 const VALUES = [
@@ -54,7 +57,12 @@ export default function Home() {
   return (
     <div>
       {/* ── Hero ─────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl mx-4 sm:mx-6 mt-4 sm:mt-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="relative overflow-hidden rounded-3xl mx-4 sm:mx-6 mt-4 sm:mt-6"
+      >
         <div
           className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-[1px] rounded-3xl"
           style={{ backgroundImage: `url(${gscLogo})` }}
@@ -106,9 +114,14 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="max-w-6xl px-6 mx-4 sm:mx-6 lg:mx-auto">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.6, delay: 0.6 }}
+        className="max-w-6xl px-6 mx-4 sm:mx-6 lg:mx-auto"
+      >
         {/* ── At a glance dashboard ────────────────────────── */}
         <section className="py-14 sm:py-16">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">At a Glance</h2>
@@ -211,9 +224,9 @@ export default function Home() {
         {/* ── What this portal offers ─────────────────────── */}
         <section className="py-14 sm:py-16">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">What This Portal Offers</h2>
-          <p className="mt-2 max-w-xl text-ink-600">Seven dedicated sections - everything about your student government, in one place.</p>
+          <p className="mt-2 max-w-xl text-ink-600">Eight dedicated sections - everything about your student government, in one place.</p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map(({ to, icon: Icon, title, desc }) => (
               <Link key={to} to={to}>
                 <Card className="group h-full p-6 transition-transform hover:-translate-y-0.5 rounded-2xl">
@@ -252,9 +265,7 @@ export default function Home() {
             <StatCard value={String(openPolls.length)} label="Open Polls" />
           </div>
         </section>
-
-
-      </div>
+      </motion.div>
     </div>
   )
 }

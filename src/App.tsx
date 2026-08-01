@@ -13,6 +13,7 @@ import Updates from '@/pages/Updates'
 import Reports from '@/pages/Reports'
 import News from '@/pages/News'
 import Voting from '@/pages/Voting'
+import Community from '@/pages/Community'
 import Account from '@/pages/Account'
 
 import AdminLogin from '@/pages/admin/AdminLogin'
@@ -66,6 +67,7 @@ function AppContent() {
         <Route path="/reports" element={<PublicLayout><Reports /></PublicLayout>} />
         <Route path="/news" element={<PublicLayout><News /></PublicLayout>} />
         <Route path="/voting" element={<PublicLayout><Voting /></PublicLayout>} />
+        <Route path="/community" element={<PublicLayout><Community /></PublicLayout>} />
         <Route path="/account" element={<PublicLayout><Account /></PublicLayout>} />
 
         {/* Admin */}

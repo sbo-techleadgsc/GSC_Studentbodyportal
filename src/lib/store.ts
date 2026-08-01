@@ -17,6 +17,7 @@ import type {
   NewsPost,
   Poll,
   PollOption,
+  FreedomMessage,
 } from './types'
 import {
   seedOfficers,
@@ -38,13 +39,13 @@ const KEYS = {
   news: 'sbo_news',
   polls: 'sbo_polls',
   votedPolls: 'sbo_voted_polls',
+  freedomWall: 'sbo_freedom_wall',
 } as const
 
 function read<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key)
     if (!raw) {
-      localStorage.setItem(key, JSON.stringify(fallback))
       return fallback
     }
     return JSON.parse(raw) as T
@@ -203,6 +204,26 @@ function toSnakeReport(row: Report): Record<string, unknown> {
   }
 }
 
+function toCamelFreedomMessage(row: any): FreedomMessage {
+  return {
+    id: row.id,
+    message: row.message,
+    color: row.color,
+    createdAt: row.created_at ?? row.createdAt,
+    likes: row.likes ?? 0,
+  }
+}
+
+function toSnakeFreedomMessage(row: FreedomMessage): Record<string, unknown> {
+  return {
+    id: row.id,
+    message: row.message,
+    color: row.color,
+    created_at: row.createdAt,
+    likes: row.likes,
+  }
+}
+
 function toCamelNews(row: any): NewsPost {
   return {
     id: row.id,
@@ -302,11 +323,11 @@ export const officersDb = {
   async list(): Promise<Officer[]> {
     if (supabase) {
       const { data, error } = await supabase.from('officers').select('*').order('order', { ascending: true })
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return data.map(toCamelOfficer).sort((a, b) => a.order - b.order)
       }
     }
-    return read(KEYS.officers, seedOfficers).sort((a, b) => a.order - b.order)
+    return []
   },
   async upsert(officer: Omit<Officer, 'id'> & { id?: string }): Promise<Officer> {
     const record: Officer = { ...officer, id: officer.id ?? uid() } as Officer
@@ -324,12 +345,7 @@ export const officersDb = {
       }
     }
 
-    const all = read(KEYS.officers, seedOfficers)
-    const idx = all.findIndex((o) => o.id === record.id)
-    if (idx >= 0) all[idx] = record
-    else all.push(record)
-    write(KEYS.officers, all)
-    return record
+    throw new Error('Supabase is not configured')
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -339,7 +355,7 @@ export const officersDb = {
         return
       }
     }
-    write(KEYS.officers, read(KEYS.officers, seedOfficers).filter((o) => o.id !== id))
+    throw new Error('Supabase is not configured')
   },
 }
 
@@ -348,13 +364,13 @@ export const promisesDb = {
   async list(): Promise<Promise_[]> {
     if (supabase) {
       const { data: promisesData, error: promisesError } = await supabase.from('promises').select('*')
-      if (!promisesError && promisesData && promisesData.length > 0) {
+      if (!promisesError && promisesData) {
         const { data: officersData } = await supabase.from('officers').select('id, name')
         const officerNames = new Map((officersData ?? []).map((row: any) => [row.id, row.name]))
         return promisesData.map((row: any) => toCamelPromise(row, officerNames.get(row.officer_id)))
       }
     }
-    return read(KEYS.promises, seedPromises)
+    return []
   },
   async upsert(item: Omit<Promise_, 'id' | 'updatedAt'> & { id?: string }): Promise<Promise_> {
     const record: Promise_ = { ...item, id: item.id ?? uid(), updatedAt: nowISO() } as Promise_
@@ -372,12 +388,7 @@ export const promisesDb = {
       }
     }
 
-    const all = read(KEYS.promises, seedPromises)
-    const idx = all.findIndex((p) => p.id === record.id)
-    if (idx >= 0) all[idx] = record
-    else all.unshift(record)
-    write(KEYS.promises, all)
-    return record
+    throw new Error('Supabase is not configured')
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -387,7 +398,7 @@ export const promisesDb = {
         return
       }
     }
-    write(KEYS.promises, read(KEYS.promises, seedPromises).filter((p) => p.id !== id))
+    throw new Error('Supabase is not configured')
   },
 }
 
@@ -396,11 +407,11 @@ export const budgetDb = {
   async list(): Promise<BudgetItem[]> {
     if (supabase) {
       const { data, error } = await supabase.from('budget_items').select('*')
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return data.map(toCamelBudget)
       }
     }
-    return read(KEYS.budget, seedBudget)
+    return []
   },
   async upsert(item: Omit<BudgetItem, 'id'> & { id?: string }): Promise<BudgetItem> {
     const record: BudgetItem = { ...item, id: item.id ?? uid() } as BudgetItem
@@ -418,12 +429,7 @@ export const budgetDb = {
       }
     }
 
-    const all = read(KEYS.budget, seedBudget)
-    const idx = all.findIndex((b) => b.id === record.id)
-    if (idx >= 0) all[idx] = record
-    else all.push(record)
-    write(KEYS.budget, all)
-    return record
+    throw new Error('Supabase is not configured')
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -433,7 +439,7 @@ export const budgetDb = {
         return
       }
     }
-    write(KEYS.budget, read(KEYS.budget, seedBudget).filter((b) => b.id !== id))
+    throw new Error('Supabase is not configured')
   },
 }
 
@@ -442,11 +448,11 @@ export const updatesDb = {
   async list(): Promise<UpdateEntry[]> {
     if (supabase) {
       const { data, error } = await supabase.from('updates').select('*')
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return data.map(toCamelUpdate).sort((a, b) => (a.date < b.date ? 1 : -1))
       }
     }
-    return read(KEYS.updates, seedUpdates).sort((a, b) => (a.date < b.date ? 1 : -1))
+    return []
   },
   async upsert(item: Omit<UpdateEntry, 'id'> & { id?: string }): Promise<UpdateEntry> {
     const record: UpdateEntry = { ...item, id: item.id ?? uid() } as UpdateEntry
@@ -464,12 +470,7 @@ export const updatesDb = {
       }
     }
 
-    const all = read(KEYS.updates, seedUpdates)
-    const idx = all.findIndex((u) => u.id === record.id)
-    if (idx >= 0) all[idx] = record
-    else all.unshift(record)
-    write(KEYS.updates, all)
-    return record
+    throw new Error('Supabase is not configured')
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -479,7 +480,7 @@ export const updatesDb = {
         return
       }
     }
-    write(KEYS.updates, read(KEYS.updates, seedUpdates).filter((u) => u.id !== id))
+    throw new Error('Supabase is not configured')
   },
 }
 
@@ -498,7 +499,7 @@ export const reportsDb = {
         return data.map(toCamelReport).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       }
     }
-    return read(KEYS.reports, seedReports).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    return []
   },
   async submit(input: {
     visibility: 'public' | 'anonymous'
@@ -536,10 +537,7 @@ export const reportsDb = {
       return toCamelReport(data)
     }
 
-    const all = read(KEYS.reports, seedReports)
-    all.unshift(record)
-    write(KEYS.reports, all)
-    return record
+    throw new Error('Supabase is not configured')
   },
   async updateStatus(id: string, status: Report['status'], adminNotes?: string): Promise<void> {
     if (supabase) {
@@ -552,12 +550,7 @@ export const reportsDb = {
       return
     }
 
-    const all = read(KEYS.reports, seedReports)
-    const idx = all.findIndex((r) => r.id === id)
-    if (idx >= 0) {
-      all[idx] = { ...all[idx], status, adminNotes: adminNotes ?? all[idx].adminNotes }
-      write(KEYS.reports, all)
-    }
+    throw new Error('Supabase is not configured')
   },
   async findByTrackingCode(code: string): Promise<Report | undefined> {
     if (supabase) {
@@ -571,8 +564,7 @@ export const reportsDb = {
       }
       return undefined
     }
-    const all = read(KEYS.reports, seedReports)
-    return all.find((r) => r.trackingCode.toLowerCase() === code.trim().toLowerCase())
+    return undefined
   },
   async findByEmail(email: string): Promise<Report[]> {
     if (supabase) {
@@ -586,8 +578,7 @@ export const reportsDb = {
       }
       return []
     }
-    const all = read(KEYS.reports, seedReports)
-    return all.filter((r) => r.email?.toLowerCase() === email.trim().toLowerCase()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    return []
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -599,7 +590,7 @@ export const reportsDb = {
       dispatchChange(KEYS.reports)
       return
     }
-    write(KEYS.reports, read(KEYS.reports, seedReports).filter((r) => r.id !== id))
+    throw new Error('Supabase is not configured')
   },
 }
 
@@ -608,11 +599,11 @@ export const newsDb = {
   async list(): Promise<NewsPost[]> {
     if (supabase) {
       const { data, error } = await supabase.from('news').select('*')
-      if (!error && data && data.length > 0) {
+      if (!error && data) {
         return data.map(toCamelNews).sort((a, b) => (a.date < b.date ? 1 : -1))
       }
     }
-    return read(KEYS.news, seedNews).sort((a, b) => (a.date < b.date ? 1 : -1))
+    return []
   },
   async upsert(item: Omit<NewsPost, 'id'> & { id?: string }): Promise<NewsPost> {
     const record: NewsPost = { ...item, id: item.id ?? uid() } as NewsPost
@@ -630,12 +621,7 @@ export const newsDb = {
       }
     }
 
-    const all = read(KEYS.news, seedNews)
-    const idx = all.findIndex((n) => n.id === record.id)
-    if (idx >= 0) all[idx] = record
-    else all.unshift(record)
-    write(KEYS.news, all)
-    return record
+    throw new Error('Supabase is not configured')
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -645,7 +631,71 @@ export const newsDb = {
         return
       }
     }
-    write(KEYS.news, read(KEYS.news, seedNews).filter((n) => n.id !== id))
+    throw new Error('Supabase is not configured')
+  },
+}
+
+// ── Freedom Wall ───────────────────────────────────────────
+export const freedomWallDb = {
+  async list(): Promise<FreedomMessage[]> {
+    if (supabase) {
+      const { data, error } = await supabase.from('freedom_wall').select('*')
+      if (!error && data) {
+        return data.map(toCamelFreedomMessage).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      }
+    }
+    return []
+  },
+  async submit(input: { message: string; color: 'yellow' | 'pink' | 'blue' | 'green' | 'orange' }): Promise<FreedomMessage> {
+    const record: FreedomMessage = {
+      id: uid(),
+      message: input.message,
+      color: input.color,
+      createdAt: nowISO(),
+      likes: 0,
+    }
+
+    if (supabase) {
+      const { data, error } = await supabase
+        .from('freedom_wall')
+        .insert(toSnakeFreedomMessage(record))
+        .select()
+        .single()
+
+      if (error) {
+        console.error('[freedomWallDb] submit failed', error)
+        throw new Error(error.message || 'Unable to post message.')
+      }
+
+      dispatchChange(KEYS.freedomWall)
+      return toCamelFreedomMessage(data)
+    }
+
+    throw new Error('Supabase is not configured')
+  },
+  async like(id: string): Promise<void> {
+    if (supabase) {
+      const { data: current } = await supabase.from('freedom_wall').select('likes').eq('id', id).single()
+      const currentLikes = current?.likes ?? 0
+      const { error } = await supabase.from('freedom_wall').update({ likes: currentLikes + 1 }).eq('id', id)
+      if (error) {
+        console.error('[freedomWallDb] like failed', error)
+        throw new Error(error.message || 'Unable to like message.')
+      }
+      dispatchChange(KEYS.freedomWall)
+      return
+    }
+    throw new Error('Supabase is not configured')
+  },
+  async remove(id: string): Promise<void> {
+    if (supabase) {
+      const { error } = await supabase.from('freedom_wall').delete().eq('id', id)
+      if (!error) {
+        dispatchChange(KEYS.freedomWall)
+        return
+      }
+    }
+    throw new Error('Supabase is not configured')
   },
 }
 
@@ -677,7 +727,7 @@ export const pollsDb = {
         }
       }
     }
-    return read(KEYS.polls, seedPolls)
+    return []
   },
   async upsert(item: Omit<Poll, 'id' | 'options'> & { id?: string; options: (Omit<PollOption, 'id' | 'votes'> & { id?: string; votes?: number })[] }): Promise<Poll> {
     const record: Poll = {

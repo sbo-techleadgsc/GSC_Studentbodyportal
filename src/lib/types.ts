@@ -17,6 +17,7 @@ export type UpdateCategory =
   | 'Event'
   | 'Policy'
 export type NewsCategory = 'Announcement' | 'Events' | 'Update'
+export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'orange'
 
 export interface Officer {
   id: string
@@ -94,6 +95,14 @@ export interface Poll {
   startDate: string
   endDate: string
   isOpen: boolean
+}
+
+export interface FreedomMessage {
+  id: string
+  message: string
+  color: NoteColor
+  createdAt: string
+  likes: number
 }
 
 export interface OrgStats {

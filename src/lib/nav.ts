@@ -8,6 +8,7 @@ import {
   Newspaper,
   Vote,
   User,
+  MessageSquare,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -26,5 +27,6 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/reports', label: 'Reports', icon: Flag },
   { to: '/news', label: 'News', icon: Newspaper },
   { to: '/voting', label: 'Voting', icon: Vote },
+  { to: '/community', label: 'Community', icon: MessageSquare },
   { to: '/account', label: 'Account', icon: User },
 ]

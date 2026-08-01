@@ -143,7 +143,6 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       password: normalizedPassword,
       options: {
         data: { full_name: name || normalizedEmail },
-        emailConfirmTo: false, // Disable email confirmation - user signs in immediately
       },
     })
 
@@ -152,10 +151,26 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
       return false
     }
 
-    // Session should now exist since we disabled email confirmation
+    // If no session, sign in the user immediately
     if (!data.session) {
-      console.error('[signUpPublicUser] No session even with emailConfirmTo: false')
-      return false
+      console.log('[signUpPublicUser] No session - signing in immediately')
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: normalizedEmail,
+        password: normalizedPassword,
+      })
+
+      if (signInError || !signInData.session) {
+        console.error('[signUpPublicUser] Auto sign-in failed:', signInError?.message)
+        return false
+      }
+
+      const publicName = name || signInData.user?.email || 'Public User'
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ name: publicName }))
+      setIsAdmin(true)
+      setIsAuthenticated(true)
+      setAdminName(publicName)
+      console.log('[signUpPublicUser] User signed up and auto-signed in:', publicName)
+      return true
     }
 
     // Session exists - user is signed in
