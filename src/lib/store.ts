@@ -41,6 +41,7 @@ const KEYS = {
   polls: 'sbo_polls',
   votedPolls: 'sbo_voted_polls',
   freedomWall: 'sbo_freedom_wall',
+  settings: 'sbo_settings',
 } as const
 
 function read<T>(key: string, fallback: T): T {
@@ -945,7 +946,28 @@ export const pollsDb = {
     return voted[pollId]
   },
 }
+// ── Site settings (maintenance mode, etc.) ────────────────────
+export interface SiteSettings {
+  maintenanceMode: boolean
+  maintenanceMessage: string
+}
 
+const defaultSettings: SiteSettings = {
+  maintenanceMode: false,
+  maintenanceMessage: "We're making a few updates. Check back shortly.",
+}
+
+export const settingsDb = {
+  async get(): Promise<SiteSettings> {
+    return read(KEYS.settings, defaultSettings)
+  },
+  async update(patch: Partial<SiteSettings>): Promise<SiteSettings> {
+    const current = read(KEYS.settings, defaultSettings)
+    const next = { ...current, ...patch }
+    write(KEYS.settings, next)
+    return next
+  },
+}
 // ── Reset helper (handy for demoing) ─────────────────────────
 export function resetAllData() {
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k))
