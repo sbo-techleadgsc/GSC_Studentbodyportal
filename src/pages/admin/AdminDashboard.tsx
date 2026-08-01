@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Users, CheckSquare, DollarSign, Radio, Flag, Newspaper, Vote, ArrowRight } from 'lucide-react'
+import { Users, CheckSquare, DollarSign, Radio, Flag, Newspaper, Vote, MessageSquare, ArrowRight } from 'lucide-react'
 import { Card } from '@/components/ui/Primitives'
 import { useAdminAuth } from '@/context/AdminAuthContext'
 import { useLiveData } from '@/lib/hooks'
@@ -14,6 +14,7 @@ const SHORTCUTS = [
   { to: '/admin/reports', label: 'Reports', icon: Flag, desc: 'Review and resolve student reports' },
   { to: '/admin/news', label: 'News', icon: Newspaper, desc: 'Publish school announcements' },
   { to: '/admin/polls', label: 'Polls', icon: Vote, desc: 'Create and manage public voting' },
+  { to: '/admin/community', label: 'Community', icon: MessageSquare, desc: 'Moderate wall posts and song notes' },
 ]
 
 export default function AdminDashboard() {

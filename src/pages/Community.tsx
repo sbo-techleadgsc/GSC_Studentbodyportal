@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, MessageSquare, AlertTriangle, Heart, RotateCcw } from 'lucide-react'
+import { Heart, MessageSquare, Music4, Pause, Play, RotateCcw, Search, Sparkles } from 'lucide-react'
 import { Button, Card } from '@/components/ui/Primitives'
 import { freedomWallDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
@@ -16,30 +16,274 @@ const COLORS = [
 
 const ROTATIONS = [-2, -1, 0, 1, 2, 3, -3]
 
-// Basic bad word filter
+type MessageMeta = {
+  nickname: string
+  senderName: string
+  recipientName: string
+  spotifyUrl: string
+  spotifyQuery?: string
+  songTitle?: string
+  songArtist?: string
+  songArtwork?: string
+}
+
+type SpotifySearchItem = {
+  id: string
+  title: string
+  artist: string
+  spotifyUrl: string
+  previewUrl?: string
+  artwork?: string
+}
+
+const STORAGE_KEYS = {
+  nickname: 'sbo_freedom_wall_nickname',
+  likes: 'sbo_freedom_wall_liked_messages',
+  meta: 'sbo_freedom_wall_message_meta',
+}
+
 const BAD_WORDS = ['fuck', 'shit', 'ass', 'bitch', 'damn', 'crap', 'hell', 'stupid', 'idiot', 'hate', 'kill', 'die']
 
 function containsBadWords(text: string): boolean {
   const lowerText = text.toLowerCase()
-  return BAD_WORDS.some(word => lowerText.includes(word))
+  return BAD_WORDS.some((word) => lowerText.includes(word))
+}
+
+function getStoredNickname(): string {
+  if (typeof window === 'undefined') return ''
+  return window.localStorage.getItem(STORAGE_KEYS.nickname) ?? ''
+}
+
+function saveStoredNickname(nickname: string) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(STORAGE_KEYS.nickname, nickname)
+}
+
+function getLikedMessageIds(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEYS.likes)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as string[]
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveLikedMessageIds(ids: string[]) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(STORAGE_KEYS.likes, JSON.stringify(ids))
+}
+
+function getMessageMeta(): Record<string, MessageMeta> {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEYS.meta)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as Record<string, MessageMeta>
+    return parsed && typeof parsed === 'object' ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveMessageMeta(meta: Record<string, MessageMeta>) {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(STORAGE_KEYS.meta, JSON.stringify(meta))
+}
+
+function normalizeSpotifyUrl(value: string): string {
+  const trimmed = value.trim()
+  if (!trimmed) return ''
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://www.deezer.com/search/${encodeURIComponent(trimmed)}`
+}
+
+function getSpotifyAudioUrl(value: string): string | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+
+  try {
+    const parsed = new URL(trimmed)
+    const path = parsed.pathname.replace(/^\/+/, '')
+
+    if (!path) return null
+
+    if (parsed.hostname.includes('deezer.com') && parsed.searchParams.get('id')) {
+      return trimmed
+    }
+
+    if (parsed.hostname.includes('spotify.com') || parsed.hostname.includes('open.spotify.com')) {
+      const segments = path.split('/').filter(Boolean)
+      const type = segments[0]
+      const id = segments[1]
+
+      if (!type || !id) return null
+
+      const supportedTypes = ['track', 'album', 'playlist', 'artist', 'episode', 'show']
+      if (!supportedTypes.includes(type)) return null
+
+      return `https://open.spotify.com/embed/${type}/${id}`
+    }
+  } catch {
+    return null
+  }
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed
+  }
+
+  return null
+}
+
+function buildDisplayName(value: string): string {
+  return value.trim()
 }
 
 export default function Community() {
   const [messages, setMessages] = useState<FreedomMessage[]>([])
   const [showForm, setShowForm] = useState(false)
   const [newMessage, setNewMessage] = useState('')
+  const [nicknameInput, setNicknameInput] = useState(() => getStoredNickname())
+  const [senderNameInput, setSenderNameInput] = useState('')
+  const [recipientNameInput, setRecipientNameInput] = useState('')
+  const [spotifySearchInput, setSpotifySearchInput] = useState('')
+  const [selectedSong, setSelectedSong] = useState<SpotifySearchItem | null>(null)
+  const [spotifyResults, setSpotifyResults] = useState<SpotifySearchItem[]>([])
+  const [spotifySearchLoading, setSpotifySearchLoading] = useState(false)
+  const [spotifySearchError, setSpotifySearchError] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [selectedColor, setSelectedColor] = useState<NoteColor>('yellow')
   const [warning, setWarning] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [messageMeta, setMessageMeta] = useState<Record<string, MessageMeta>>(() => getMessageMeta())
+  const [likedMessageIds, setLikedMessageIds] = useState<string[]>(() => getLikedMessageIds())
+  const [featuredIndex, setFeaturedIndex] = useState(0)
+  const [activePreviewUrl, setActivePreviewUrl] = useState<string | null>(null)
+  const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
+  const [previewError, setPreviewError] = useState('')
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
-    loadMessages()
+    void loadMessages()
   }, [])
+
+  useEffect(() => {
+    if (messages.length < 2) return
+    const timer = window.setInterval(() => {
+      setFeaturedIndex((current) => (current + 1) % Math.min(messages.length, 4))
+    }, 3500)
+    return () => window.clearInterval(timer)
+  }, [messages.length])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+
+    if (!activePreviewUrl) {
+      audio.pause()
+      setIsPreviewPlaying(false)
+      return
+    }
+
+    if (audio.src !== activePreviewUrl) {
+      audio.src = activePreviewUrl
+      audio.load()
+    }
+
+    const handlePlay = () => {
+      setIsPreviewPlaying(true)
+      setPreviewError('')
+    }
+    const handlePause = () => setIsPreviewPlaying(false)
+    const handleEnded = () => {
+      setIsPreviewPlaying(false)
+      setActivePreviewUrl(null)
+    }
+    const handleError = () => {
+      setIsPreviewPlaying(false)
+      setPreviewError('Preview unavailable for this track right now.')
+    }
+
+    audio.addEventListener('play', handlePlay)
+    audio.addEventListener('pause', handlePause)
+    audio.addEventListener('ended', handleEnded)
+    audio.addEventListener('error', handleError)
+
+    return () => {
+      audio.removeEventListener('play', handlePlay)
+      audio.removeEventListener('pause', handlePause)
+      audio.removeEventListener('ended', handleEnded)
+      audio.removeEventListener('error', handleError)
+    }
+  }, [activePreviewUrl])
+
+  useEffect(() => {
+    const query = spotifySearchInput.trim()
+    if (!query) {
+      setSpotifyResults([])
+      setSpotifySearchError('')
+      return
+    }
+
+    const controller = new AbortController()
+    const timeoutId = window.setTimeout(async () => {
+      setSpotifySearchLoading(true)
+      setSpotifySearchError('')
+
+      try {
+        const response = await fetch(`/api/spotify-search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+        const payload = await response.json()
+
+        if (!response.ok) {
+          throw new Error(payload?.error || 'Spotify search failed')
+        }
+
+        const tracks = Array.isArray(payload?.tracks) ? payload.tracks : []
+        setSpotifyResults(tracks)
+      } catch (error) {
+        if (controller.signal.aborted) return
+        console.error('Failed to search Spotify:', error)
+        setSpotifyResults([])
+        setSpotifySearchError(error instanceof Error ? error.message : 'Unable to search Spotify right now.')
+      } finally {
+        if (!controller.signal.aborted) {
+          setSpotifySearchLoading(false)
+        }
+      }
+    }, 350)
+
+    return () => {
+      clearTimeout(timeoutId)
+      controller.abort()
+    }
+  }, [spotifySearchInput])
 
   async function loadMessages() {
     try {
       const data = await freedomWallDb.list()
       setMessages(data)
+      const storedMeta = getMessageMeta()
+      const mergedMeta = data.reduce<Record<string, MessageMeta>>((acc, item) => {
+        const meta = item as FreedomMessage & Partial<MessageMeta>
+        const nextMeta = {
+          nickname: meta.nickname ?? storedMeta[item.id]?.nickname ?? '',
+          senderName: meta.senderName ?? storedMeta[item.id]?.senderName ?? '',
+          recipientName: meta.recipientName ?? storedMeta[item.id]?.recipientName ?? '',
+          spotifyUrl: meta.spotifyUrl ?? storedMeta[item.id]?.spotifyUrl ?? '',
+          spotifyQuery: meta.spotifyQuery ?? storedMeta[item.id]?.spotifyQuery ?? '',
+          songTitle: meta.songTitle ?? storedMeta[item.id]?.songTitle ?? '',
+          songArtist: meta.songArtist ?? storedMeta[item.id]?.songArtist ?? '',
+          songArtwork: meta.songArtwork ?? storedMeta[item.id]?.songArtwork ?? '',
+        }
+        if (Object.values(nextMeta).some(Boolean)) {
+          acc[item.id] = nextMeta
+        }
+        return acc
+      }, {})
+      setMessageMeta({ ...storedMeta, ...mergedMeta })
+      setLikedMessageIds(getLikedMessageIds())
     } catch (error) {
       console.error('Failed to load messages:', error)
     } finally {
@@ -56,8 +300,8 @@ export default function Community() {
       return
     }
 
-    if (newMessage.length > 200) {
-      setWarning('Message must be 200 characters or less')
+    if (newMessage.length > 220) {
+      setWarning('Message must be 220 characters or less')
       return
     }
 
@@ -66,31 +310,143 @@ export default function Community() {
       return
     }
 
+    const finalNickname = buildDisplayName(nicknameInput)
+    const finalSenderName = buildDisplayName(senderNameInput)
+    const finalRecipientName = buildDisplayName(recipientNameInput)
+
+    if (!finalNickname || !finalSenderName || !finalRecipientName) {
+      setWarning('Please add your nickname, sender name, and recipient name before posting')
+      return
+    }
+
+    saveStoredNickname(finalNickname)
+
     try {
-      await freedomWallDb.submit({
+      const createdMessage = await freedomWallDb.submit({
         message: newMessage.trim(),
         color: selectedColor,
+        meta: {
+          nickname: finalNickname,
+          senderName: finalSenderName,
+          recipientName: finalRecipientName,
+          spotifyUrl: selectedSong?.spotifyUrl || normalizeSpotifyUrl(spotifySearchInput),
+          spotifyQuery: selectedSong ? `${selectedSong.title} ${selectedSong.artist}` : spotifySearchInput.trim(),
+          songTitle: selectedSong?.title ?? '',
+          songArtist: selectedSong?.artist ?? '',
+          songArtwork: selectedSong?.artwork ?? '',
+        },
       })
+
+      const nextMeta = {
+        ...messageMeta,
+        [createdMessage.id]: {
+          nickname: finalNickname,
+          senderName: finalSenderName,
+          recipientName: finalRecipientName,
+          spotifyUrl: selectedSong?.previewUrl || selectedSong?.spotifyUrl || normalizeSpotifyUrl(spotifySearchInput),
+          spotifyQuery: selectedSong ? `${selectedSong.title} ${selectedSong.artist}` : spotifySearchInput.trim(),
+          songTitle: selectedSong?.title ?? '',
+          songArtist: selectedSong?.artist ?? '',
+          songArtwork: selectedSong?.artwork ?? '',
+        },
+      }
+      setMessageMeta(nextMeta)
+      saveMessageMeta(nextMeta)
+
       setNewMessage('')
+      setNicknameInput(finalNickname)
+      setSenderNameInput('')
+      setRecipientNameInput('')
+      setSpotifySearchInput('')
+      setSelectedSong(null)
       setShowForm(false)
       setSelectedColor('yellow')
       await loadMessages()
-    } catch (error) {
+    } catch {
       setWarning('Failed to post message. Please try again.')
     }
   }
 
   async function handleLike(id: string) {
+    if (likedMessageIds.includes(id)) {
+      setWarning('You already liked this message.')
+      return
+    }
+
+    const nextLikedIds = [...likedMessageIds, id]
+    setLikedMessageIds(nextLikedIds)
+    saveLikedMessageIds(nextLikedIds)
+
+    setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, likes: msg.likes + 1 } : msg)))
+
     try {
       await freedomWallDb.like(id)
       await loadMessages()
     } catch (error) {
       console.error('Failed to like message:', error)
+      setMessages((prev) => prev.map((msg) => (msg.id === id ? { ...msg, likes: Math.max(0, msg.likes - 1) } : msg)))
+      const revertedIds = nextLikedIds.filter((likedId) => likedId !== id)
+      setLikedMessageIds(revertedIds)
+      saveLikedMessageIds(revertedIds)
     }
   }
 
+  const filteredMessages = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+    if (!query) return messages
+
+    return messages.filter((msg) => {
+      const meta = messageMeta[msg.id] || {} as MessageMeta
+      const haystack = [
+        meta.nickname,
+        meta.senderName,
+        meta.recipientName,
+        msg.message,
+        meta.songTitle,
+        meta.songArtist,
+        meta.spotifyQuery,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+
+      return haystack.includes(query)
+    })
+  }, [messages, messageMeta, searchQuery])
+
+  const featuredMessages = useMemo(() => {
+    return [...messages].sort((a, b) => b.likes - a.likes).slice(0, 4)
+  }, [messages])
+
   function getRandomRotation() {
     return ROTATIONS[Math.floor(Math.random() * ROTATIONS.length)]
+  }
+
+  async function togglePreview(url: string) {
+    if (!url) return
+
+    const audio = audioRef.current
+    if (!audio) return
+
+    if (activePreviewUrl === url && isPreviewPlaying) {
+      audio.pause()
+      setIsPreviewPlaying(false)
+      setActivePreviewUrl(null)
+      return
+    }
+
+    audio.src = url
+    audio.load()
+    try {
+      await audio.play()
+      setActivePreviewUrl(url)
+      setIsPreviewPlaying(true)
+      setPreviewError('')
+    } catch {
+      setActivePreviewUrl(url)
+      setIsPreviewPlaying(false)
+      setPreviewError('Preview playback was blocked by the browser. Please try another track.')
+    }
   }
 
   function getRandomColor() {
@@ -109,209 +465,320 @@ export default function Community() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50">
-      {/* Header */}
-      <div className="relative overflow-hidden bg-navy-900 text-white py-12 px-6">
-        <div className="max-w-6xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="flex items-center gap-3 mb-4">
-              <MessageSquare className="h-8 w-8 text-gold-400" />
-              <h1 className="text-3xl font-extrabold">Community Freedom Wall</h1>
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 text-slate-900">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <audio ref={audioRef} preload="auto" controls className="hidden" />
+        <div className="rounded-[32px] border border-amber-800/20 bg-white/80 p-6 shadow-[0_20px_60px_rgba(0,0,0,0.10)] backdrop-blur">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.35em] text-amber-700">Community music wall</p>
+              <h1 className="mt-2 text-3xl font-bold sm:text-4xl">Share songs, moods, and messages</h1>
+              <p className="mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+                Search a song, send it to someone, and let the wall feel like a shared note board.
+              </p>
             </div>
-            <p className="text-navy-100/80 max-w-2xl">
-              Share your thoughts, ideas, and messages with the community. This is a space for positive expression - keep it respectful and kind!
-            </p>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Warning Banner */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="max-w-6xl mx-auto px-6 mt-6"
-      >
-        <Card className="bg-amber-50 border-amber-200 p-4 rounded-xl flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="text-sm">
-            <p className="font-semibold text-amber-900">Community Guidelines</p>
-            <p className="text-amber-700 mt-1">
-              Please be respectful and positive. Inappropriate language, bullying, or harmful content will be removed. 
-              Keep messages under 200 characters.
-            </p>
+            <Button onClick={() => setShowForm(true)} className="rounded-full bg-amber-700 px-5 py-3 text-sm font-semibold text-white hover:bg-amber-800">
+              + Add a song
+            </Button>
           </div>
-        </Card>
-      </motion.div>
+        </div>
 
-      {/* Add Message Button */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-        className="max-w-6xl mx-auto px-6 mt-6"
-      >
-        {!showForm ? (
-          <Button
-            onClick={() => setShowForm(true)}
-            className="bg-navy-900 text-white hover:bg-navy-800 rounded-xl px-6 py-3 flex items-center gap-2 shadow-lg"
-          >
-            <Plus className="h-5 w-5" />
-            Add Your Message
-          </Button>
-        ) : (
-          <Card className="bg-white p-6 rounded-xl shadow-lg">
-            <h3 className="font-bold text-ink-900 mb-4">Add Your Message</h3>
-            <form onSubmit={handleSubmit}>
-              <textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Share something positive..."
-                className="w-full p-4 border border-surface-muted rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-navy-900/20"
-                rows={4}
-                maxLength={200}
-              />
-              <div className="flex justify-between items-center mt-2 text-xs text-ink-400">
-                <span>{newMessage.length}/200 characters</span>
+        {showForm && (
+          <Card className="mt-6 border border-amber-800/20 bg-white p-6 shadow-[0_16px_40px_rgba(0,0,0,0.08)]">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="text-sm font-semibold text-slate-800">Your nickname</label>
+                  <input
+                    value={nicknameInput}
+                    onChange={(e) => setNicknameInput(e.target.value)}
+                    placeholder="Enter your nickname"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    maxLength={24}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-semibold text-slate-800">Recipient</label>
+                  <input
+                    value={recipientNameInput}
+                    onChange={(e) => setRecipientNameInput(e.target.value)}
+                    placeholder="Who is this for?"
+                    className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    maxLength={24}
+                  />
+                </div>
               </div>
 
-              <div className="mt-4">
-                <p className="text-sm font-medium text-ink-900 mb-2">Choose note color:</p>
-                <div className="flex gap-2">
-                  {COLORS.map((color) => (
-                    <button
-                      key={color.name}
-                      type="button"
-                      onClick={() => setSelectedColor(color.name as NoteColor)}
-                      className={`w-8 h-8 rounded-full ${color.bg} ${color.border} border-2 ${
-                        selectedColor === color.name ? 'ring-2 ring-navy-900 ring-offset-2' : ''
-                      } transition-all`}
-                    />
-                  ))}
+              <div>
+                <label className="text-sm font-semibold text-slate-800">From</label>
+                <input
+                  value={senderNameInput}
+                  onChange={(e) => setSenderNameInput(e.target.value)}
+                  placeholder="Your name"
+                  className="mt-2 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  maxLength={24}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-800">Your message</label>
+                <textarea
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Share something positive..."
+                  className="mt-2 min-h-[110px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  maxLength={220}
+                />
+              </div>
+
+              <div className="rounded-[24px] border border-amber-800/20 bg-amber-50/70 p-4">
+                <div className="flex items-center gap-2">
+                  <Music4 className="h-4 w-4 text-amber-700" />
+                  <label className="text-sm font-semibold text-slate-800">Search songs</label>
+                </div>
+                <div className="relative mt-3">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    value={spotifySearchInput}
+                    onChange={(e) => setSpotifySearchInput(e.target.value)}
+                    placeholder="Search a track, artist, or mood"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-10 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {!spotifySearchInput.trim() && !spotifySearchLoading && !spotifySearchError && (
+                    <p className="text-sm text-slate-600">Type a song title or artist to search music live.</p>
+                  )}
+
+                  {spotifySearchLoading && (
+                    <p className="text-sm text-slate-600">Searching music…</p>
+                  )}
+
+                  {!spotifySearchLoading && spotifySearchError && (
+                    <p className="rounded-2xl border border-amber-400/30 bg-amber-50 px-3 py-2 text-sm text-amber-700">{spotifySearchError}</p>
+                  )}
+
+                  {!spotifySearchLoading && !spotifySearchError && spotifySearchInput.trim() && spotifyResults.length === 0 && (
+                    <p className="text-sm text-slate-600">No matches yet. Try another title or artist.</p>
+                  )}
+
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {spotifyResults.map((item) => {
+                      const isSelected = selectedSong?.id === item.id
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedSong(item)}
+                          className={`rounded-2xl border p-3 text-left transition ${isSelected ? 'border-amber-600 bg-amber-100 shadow-sm' : 'border-slate-200 bg-white hover:border-amber-400 hover:bg-amber-50'}`}
+                        >
+                          {item.artwork ? (
+                            <img src={item.artwork} alt={`${item.title} artwork`} className="h-14 w-full rounded-xl object-cover" />
+                          ) : (
+                            <div className="h-14 rounded-xl bg-gradient-to-br from-amber-400 to-rose-400" />
+                          )}
+                          <p className="mt-3 text-sm font-semibold text-slate-800">{item.title}</p>
+                          <p className="text-xs text-slate-600">{item.artist}</p>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
 
               {warning && (
-                <p className="mt-4 text-sm text-red-600 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" />
+                <p className="rounded-2xl border border-rose-400/30 bg-rose-50 px-3 py-2 text-sm text-rose-600">
                   {warning}
                 </p>
               )}
 
-              <div className="flex gap-3 mt-6">
-                <Button
-                  type="submit"
-                  className="bg-navy-900 text-white hover:bg-navy-800 rounded-xl px-6 py-2"
-                >
-                  Post Message
+              <div className="flex flex-wrap gap-3">
+                <Button type="submit" className="rounded-full bg-amber-700 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-800">
+                  Post song
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    setShowForm(false)
-                    setNewMessage('')
-                    setWarning('')
-                    setSelectedColor('yellow')
-                  }}
-                  variant="ghost"
-                  className="rounded-xl px-6 py-2"
-                >
+                <Button type="button" variant="ghost" onClick={() => { setShowForm(false); setWarning(''); setNewMessage(''); setSpotifySearchInput(''); setSelectedSong(null); }} className="rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                   Cancel
                 </Button>
               </div>
             </form>
           </Card>
         )}
-      </motion.div>
 
-      {/* Freedom Wall */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="max-w-6xl mx-auto px-6 py-8"
-      >
-        <div className="bg-amber-900/20 rounded-3xl p-8 min-h-[600px] border-4 border-amber-800/30 shadow-inner">
-          {/* Corkboard texture */}
-          <div className="absolute inset-0 opacity-10" style={{
-            backgroundImage: 'radial-gradient(circle, #8B4513 1px, transparent 1px)',
-            backgroundSize: '20px 20px'
-          }} />
-
-          {messages.length === 0 ? (
-            <div className="text-center py-20">
-              <MessageSquare className="h-16 w-16 text-amber-600/50 mx-auto mb-4" />
-              <p className="text-ink-400 text-lg">No messages yet. Be the first to share!</p>
+        <div className="mt-6 rounded-[32px] border border-amber-800/20 bg-amber-900/10 p-6 shadow-inner">
+          <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900">Most liked notes</h2>
+              <p className="text-sm text-slate-600">A rotating peek at the songs and messages people are loving most.</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 relative">
-              {messages.map((msg, index) => {
-                const colorConfig = COLORS.find(c => c.name === msg.color) || getRandomColor()
+            <Button onClick={loadMessages} variant="ghost" className="flex items-center gap-2 rounded-full bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-white">
+              <RotateCcw className="h-4 w-4" />
+              Refresh wall
+            </Button>
+          </div>
+
+          <div className="rounded-[28px] border border-amber-800/20 bg-amber-950/10 p-4">
+            <div className="relative min-h-[260px] overflow-hidden rounded-[24px] border border-amber-800/20 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(255,255,255,0.15))] p-4">
+              {messages.slice(0, 6).map((msg, index) => {
+                const meta = messageMeta[msg.id] || {} as MessageMeta
                 const rotation = getRandomRotation()
-                
+                const colorConfig = COLORS[index % COLORS.length]
+                const top = ['12%', '24%', '48%', '68%', '20%', '58%'][index]
+                const left = ['6%', '28%', '58%', '74%', '44%', '16%'][index]
+
                 return (
                   <motion.div
                     key={msg.id}
-                    initial={{ opacity: 0, scale: 0.8, rotate: rotation - 5 }}
-                    animate={{ opacity: 1, scale: 1, rotate: rotation }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className="relative"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.35, delay: index * 0.05 }}
+                    className={`absolute w-[160px] rounded-[18px] border-2 p-3 shadow-lg ${colorConfig.bg} ${colorConfig.border} ${colorConfig.shadow}`}
+                    style={{ top, left, transform: `rotate(${rotation}deg)` }}
                   >
-                    <div
-                      className={`${colorConfig.bg} ${colorConfig.border} ${colorConfig.shadow} border-2 p-4 rounded-lg shadow-lg transform hover:scale-105 transition-transform cursor-pointer`}
-                      style={{
-                        transform: `rotate(${rotation}deg)`,
-                        boxShadow: `4px 4px 12px ${colorConfig.shadow.replace('shadow-', '')}`,
-                      }}
-                    >
-                      {/* Push pin */}
-                      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-                        <div className="w-3 h-3 rounded-full bg-red-500 shadow-md border-2 border-red-700" />
-                      </div>
-
-                      <p className="text-sm font-medium text-ink-900 mb-3 leading-relaxed min-h-[60px]">
-                        {msg.message}
-                      </p>
-
-                      <div className="flex items-center justify-between text-xs text-ink-600">
-                        <span>{formatDate(msg.createdAt)}</span>
-                        <button
-                          onClick={() => handleLike(msg.id)}
-                          className="flex items-center gap-1 hover:text-red-600 transition-colors"
-                        >
-                          <Heart className="h-3 w-3" />
-                          {msg.likes}
-                        </button>
-                      </div>
-                    </div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-600">{meta.senderName || meta.nickname || 'Anonymous'}</p>
+                    <p className="mt-2 text-sm font-semibold text-slate-800">{msg.message.slice(0, 36)}{msg.message.length > 36 ? '…' : ''}</p>
                   </motion.div>
                 )
               })}
             </div>
-          )}
-        </div>
-      </motion.div>
 
-      {/* Refresh Button */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.5 }}
-        className="max-w-6xl mx-auto px-6 pb-8"
-      >
-        <Button
-          onClick={loadMessages}
-          variant="ghost"
-          className="flex items-center gap-2 text-ink-600 hover:text-ink-900"
-        >
-          <RotateCcw className="h-4 w-4" />
-          Refresh Wall
-        </Button>
-      </motion.div>
+            <div className="mt-4 rounded-[24px] border border-amber-800/20 bg-white/80 p-4">
+              <div className="flex items-center gap-2 text-amber-700">
+                <Sparkles className="h-4 w-4" />
+                <h3 className="text-sm font-semibold uppercase tracking-[0.3em]">Most-liked loop</h3>
+              </div>
+              {featuredMessages.length > 0 ? (
+                <div className="mt-3 flex flex-col gap-3 md:flex-row">
+                  {featuredMessages.map((msg, index) => {
+                    const meta = messageMeta[msg.id] || {} as MessageMeta
+                    const isActive = index === featuredIndex % featuredMessages.length
+                    return (
+                      <div key={msg.id} className={`rounded-2xl border p-3 transition ${isActive ? 'border-amber-500 bg-amber-50 shadow-sm' : 'border-slate-200 bg-white'}`}>
+                        <p className="text-sm font-semibold text-slate-800">{meta.recipientName ? `For ${meta.recipientName}` : 'A new note'}</p>
+                        <p className="mt-1 text-sm text-slate-600">{msg.message.slice(0, 70)}{msg.message.length > 70 ? '…' : ''}</p>
+                        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+                          <span>{meta.senderName || meta.nickname || 'Anonymous'}</span>
+                          <span>{msg.likes} likes</span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-slate-600">The featured rail will appear once there are liked notes.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-[28px] border border-amber-800/20 bg-white/80 p-5">
+            <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Share your notes here</h3>
+                <p className="text-sm text-slate-600">Search by nickname, message, or song title.</p>
+              </div>
+              <div className="relative w-full lg:w-80">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search notes"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-10 py-3 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
+            {filteredMessages.length === 0 ? (
+              <div className="rounded-[24px] border border-dashed border-amber-800/20 bg-amber-50/70 p-10 text-center">
+                <MessageSquare className="mx-auto h-10 w-10 text-amber-600/60" />
+                <p className="mt-3 text-sm text-slate-600">No notes match that search yet.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredMessages.map((msg) => {
+                  const meta = messageMeta[msg.id] || {} as MessageMeta
+                  const spotifyUrl = getSpotifyAudioUrl(meta.spotifyUrl ?? '')
+
+                  return (
+                    <div key={msg.id} className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <p className="text-sm font-semibold text-slate-800">{meta.senderName || meta.nickname || 'Anonymous'}</p>
+                            <span className="text-xs text-slate-500">to</span>
+                            <p className="text-sm font-semibold text-slate-700">{meta.recipientName || 'someone special'}</p>
+                          </div>
+                          <p className="mt-1 text-xs text-slate-500">{formatDate(msg.createdAt)}</p>
+                        </div>
+                        <button
+                          onClick={() => handleLike(msg.id)}
+                          disabled={likedMessageIds.includes(msg.id)}
+                          className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-sm transition ${likedMessageIds.includes(msg.id) ? 'bg-rose-500/15 text-rose-600' : 'bg-slate-100 text-slate-700 hover:bg-rose-500/10 hover:text-rose-600'}`}
+                        >
+                          <Heart className={`h-4 w-4 ${likedMessageIds.includes(msg.id) ? 'fill-rose-500' : ''}`} />
+                          {msg.likes}
+                        </button>
+                      </div>
+
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">{msg.message}</p>
+
+                      {meta.songTitle && (
+                        <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                          <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${meta.songArtwork || 'from-amber-400 to-rose-400'}`} />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800">{meta.songTitle}</p>
+                            <p className="text-xs text-slate-500">{meta.songArtist}</p>
+                          </div>
+                        </div>
+                      )}
+
+                      {spotifyUrl ? (
+                        <div className="mt-3 overflow-hidden rounded-[24px] border border-emerald-600/20 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 p-3 text-white shadow-lg">
+                          <div className="flex items-center gap-3">
+                            {meta.songArtwork ? (
+                              <img src={meta.songArtwork} alt={meta.songTitle || 'Album artwork'} className="h-14 w-14 rounded-xl object-cover shadow-md" />
+                            ) : (
+                              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/15 text-white/80">
+                                <Music4 className="h-6 w-6" />
+                              </div>
+                            )}
+
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">{meta.songTitle || 'Untitled track'}</p>
+                              <p className="truncate text-xs text-emerald-100/80">{meta.songArtist || 'Unknown artist'}</p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => void togglePreview(spotifyUrl)}
+                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                              aria-label={isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Pause preview' : 'Play preview'}
+                            >
+                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                            </button>
+                          </div>
+
+                          <div className="mt-3 flex items-center gap-2">
+                            <div className="h-1.5 flex-1 rounded-full bg-white/15">
+                              <div className={`h-1.5 rounded-full bg-emerald-300 transition-all ${isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'w-2/3' : 'w-1/4'}`} />
+                            </div>
+                            <span className="text-[10px] uppercase tracking-[0.24em] text-emerald-100/70">
+                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Playing' : 'Preview'}
+                            </span>
+                          </div>
+
+                          {previewError && activePreviewUrl === spotifyUrl ? (
+                            <p className="mt-2 text-[11px] text-amber-200">{previewError}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

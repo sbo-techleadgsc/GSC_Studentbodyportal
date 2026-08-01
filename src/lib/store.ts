@@ -18,6 +18,7 @@ import type {
   Poll,
   PollOption,
   FreedomMessage,
+  NoteColor,
 } from './types'
 import {
   seedOfficers,
@@ -57,6 +58,14 @@ function read<T>(key: string, fallback: T): T {
 function write<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value))
   bus.dispatchEvent(new CustomEvent('change', { detail: key }))
+}
+
+function readFreedomWallMessages(): FreedomMessage[] {
+  return read<FreedomMessage[]>(KEYS.freedomWall, [])
+}
+
+function writeFreedomWallMessages(messages: FreedomMessage[]) {
+  write(KEYS.freedomWall, messages)
 }
 
 function dispatchChange(detail: string = 'all') {
@@ -205,12 +214,25 @@ function toSnakeReport(row: Report): Record<string, unknown> {
 }
 
 function toCamelFreedomMessage(row: any): FreedomMessage {
+  const meta = Array.isArray(row.freedom_wall_meta) ? row.freedom_wall_meta[0] : row.freedom_wall_meta ?? {}
+
   return {
     id: row.id,
     message: row.message,
     color: row.color,
     createdAt: row.created_at ?? row.createdAt,
     likes: row.likes ?? 0,
+    isDeleted: row.is_deleted ?? row.isDeleted ?? false,
+    deletedAt: row.deleted_at ?? row.deletedAt ?? null,
+    deletedBy: row.deleted_by ?? row.deletedBy ?? null,
+    nickname: meta.nickname ?? row.nickname ?? '',
+    senderName: meta.sender_name ?? row.senderName ?? '',
+    recipientName: meta.recipient_name ?? row.recipientName ?? '',
+    spotifyUrl: meta.spotify_url ?? row.spotifyUrl ?? '',
+    spotifyQuery: meta.spotify_query ?? row.spotifyQuery ?? '',
+    songTitle: meta.song_title ?? row.songTitle ?? '',
+    songArtist: meta.song_artist ?? row.songArtist ?? '',
+    songArtwork: meta.song_artwork ?? row.songArtwork ?? '',
   }
 }
 
@@ -221,6 +243,23 @@ function toSnakeFreedomMessage(row: FreedomMessage): Record<string, unknown> {
     color: row.color,
     created_at: row.createdAt,
     likes: row.likes,
+    is_deleted: row.isDeleted ?? false,
+    deleted_at: row.deletedAt ?? null,
+    deleted_by: row.deletedBy ?? null,
+  }
+}
+
+function toSnakeFreedomMeta(row: FreedomMessage): Record<string, unknown> {
+  return {
+    message_id: row.id,
+    nickname: row.nickname ?? '',
+    sender_name: row.senderName ?? '',
+    recipient_name: row.recipientName ?? '',
+    spotify_url: row.spotifyUrl ?? '',
+    spotify_query: row.spotifyQuery ?? '',
+    song_title: row.songTitle ?? '',
+    song_artist: row.songArtist ?? '',
+    song_artwork: row.songArtwork ?? '',
   }
 }
 
@@ -639,63 +678,120 @@ export const newsDb = {
 export const freedomWallDb = {
   async list(): Promise<FreedomMessage[]> {
     if (supabase) {
-      const { data, error } = await supabase.from('freedom_wall').select('*')
-      if (!error && data) {
-        return data.map(toCamelFreedomMessage).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      try {
+        const { data, error } = await supabase
+          .from('freedom_wall')
+          .select('*, freedom_wall_meta(*)')
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: false })
+
+        if (!error && data) {
+          return data.map(toCamelFreedomMessage)
+        }
+      } catch (error) {
+        console.warn('[freedomWallDb] Supabase list failed, using local fallback', error)
       }
     }
-    return []
+
+    const localMessages = readFreedomWallMessages()
+      .filter((message) => !message.isDeleted)
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    return localMessages
   },
-  async submit(input: { message: string; color: 'yellow' | 'pink' | 'blue' | 'green' | 'orange' }): Promise<FreedomMessage> {
+  async submit(input: { message: string; color: NoteColor; meta?: Record<string, string> }): Promise<FreedomMessage> {
     const record: FreedomMessage = {
       id: uid(),
       message: input.message,
       color: input.color,
       createdAt: nowISO(),
       likes: 0,
+      nickname: input.meta?.nickname ?? '',
+      senderName: input.meta?.senderName ?? '',
+      recipientName: input.meta?.recipientName ?? '',
+      spotifyUrl: input.meta?.spotifyUrl ?? '',
+      spotifyQuery: input.meta?.spotifyQuery ?? '',
+      songTitle: input.meta?.songTitle ?? '',
+      songArtist: input.meta?.songArtist ?? '',
+      songArtwork: input.meta?.songArtwork ?? '',
     }
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('freedom_wall')
-        .insert(toSnakeFreedomMessage(record))
-        .select()
-        .single()
+      try {
+        const { data: inserted, error: insertError } = await supabase
+          .from('freedom_wall')
+          .insert(toSnakeFreedomMessage(record))
+          .select()
+          .single()
 
-      if (error) {
-        console.error('[freedomWallDb] submit failed', error)
-        throw new Error(error.message || 'Unable to post message.')
+        if (!insertError && inserted) {
+          const metaPayload = toSnakeFreedomMeta(record)
+          await supabase.from('freedom_wall_meta').insert(metaPayload)
+
+          const { data: withMeta, error: metaError } = await supabase
+            .from('freedom_wall')
+            .select('*, freedom_wall_meta(*)')
+            .eq('id', inserted.id)
+            .single()
+
+          if (!metaError && withMeta) {
+            dispatchChange(KEYS.freedomWall)
+            return toCamelFreedomMessage(withMeta)
+          }
+
+          dispatchChange(KEYS.freedomWall)
+          return toCamelFreedomMessage(inserted)
+        }
+      } catch (error) {
+        console.warn('[freedomWallDb] Supabase submit failed, using local fallback', error)
       }
-
-      dispatchChange(KEYS.freedomWall)
-      return toCamelFreedomMessage(data)
     }
 
-    throw new Error('Supabase is not configured')
+    const nextMessages = [record, ...readFreedomWallMessages()]
+    writeFreedomWallMessages(nextMessages)
+    dispatchChange(KEYS.freedomWall)
+    return record
   },
   async like(id: string): Promise<void> {
     if (supabase) {
-      const { data: current } = await supabase.from('freedom_wall').select('likes').eq('id', id).single()
-      const currentLikes = current?.likes ?? 0
-      const { error } = await supabase.from('freedom_wall').update({ likes: currentLikes + 1 }).eq('id', id)
-      if (error) {
-        console.error('[freedomWallDb] like failed', error)
-        throw new Error(error.message || 'Unable to like message.')
+      try {
+        const { data: current } = await supabase.from('freedom_wall').select('likes').eq('id', id).single()
+        const currentLikes = current?.likes ?? 0
+        const { error } = await supabase.from('freedom_wall').update({ likes: currentLikes + 1 }).eq('id', id)
+        if (!error) {
+          dispatchChange(KEYS.freedomWall)
+          return
+        }
+      } catch (error) {
+        console.warn('[freedomWallDb] Supabase like failed, using local fallback', error)
       }
-      dispatchChange(KEYS.freedomWall)
-      return
     }
-    throw new Error('Supabase is not configured')
+
+    const nextMessages = readFreedomWallMessages().map((message) =>
+      message.id === id ? { ...message, likes: message.likes + 1 } : message,
+    )
+    writeFreedomWallMessages(nextMessages)
+    dispatchChange(KEYS.freedomWall)
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
-      const { error } = await supabase.from('freedom_wall').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.freedomWall)
-        return
+      try {
+        const { error } = await supabase
+          .from('freedom_wall')
+          .update({ is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: 'admin' })
+          .eq('id', id)
+
+        if (!error) {
+          dispatchChange(KEYS.freedomWall)
+          return
+        }
+      } catch (error) {
+        console.warn('[freedomWallDb] Supabase remove failed, using local fallback', error)
       }
     }
-    throw new Error('Supabase is not configured')
+
+    const nextMessages = readFreedomWallMessages().map((message) => (message.id === id ? { ...message, isDeleted: true, deletedAt: new Date().toISOString(), deletedBy: 'admin' } : message))
+    writeFreedomWallMessages(nextMessages)
+    dispatchChange(KEYS.freedomWall)
   },
 }
 

@@ -8,16 +8,43 @@ export function pesoCompact(amount: number): string {
   return peso(amount)
 }
 
-export function formatDate(iso: string): string {
-  return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', {
+function parseDate(value: string | Date | null | undefined): Date | null {
+  if (!value) return null
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value
+  }
+
+  const text = String(value).trim()
+  if (!text) return null
+
+  const dateOnlyMatch = text.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (dateOnlyMatch) {
+    const [, year, month, day] = dateOnlyMatch
+    return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)))
+  }
+
+  const parsed = new Date(text)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+export function formatDate(value: string | Date | null | undefined): string {
+  const date = parseDate(value)
+  if (!date) return '—'
+
+  return date.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'UTC',
   })
 }
 
-export function timeAgo(iso: string): string {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000)
+export function timeAgo(value: string | Date | null | undefined): string {
+  const date = parseDate(value)
+  if (!date) return 'recently'
+
+  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000)
   if (days <= 0) return 'today'
   if (days === 1) return '1 day ago'
   if (days < 30) return `${days} days ago`

@@ -9,6 +9,7 @@ import {
   Flag,
   Newspaper,
   Vote,
+  MessageSquare,
   LogOut,
   ExternalLink,
 } from 'lucide-react'
@@ -24,6 +25,7 @@ const ADMIN_NAV = [
   { to: '/admin/reports', label: 'Reports', icon: Flag },
   { to: '/admin/news', label: 'News', icon: Newspaper },
   { to: '/admin/polls', label: 'Polls', icon: Vote },
+  { to: '/admin/community', label: 'Community', icon: MessageSquare },
 ]
 
 export function AdminLayout({ children }: { children: ReactNode }) {

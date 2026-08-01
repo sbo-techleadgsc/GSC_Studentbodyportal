@@ -103,6 +103,17 @@ export interface FreedomMessage {
   color: NoteColor
   createdAt: string
   likes: number
+  isDeleted?: boolean
+  deletedAt?: string | null
+  deletedBy?: string | null
+  nickname?: string
+  senderName?: string
+  recipientName?: string
+  spotifyUrl?: string
+  spotifyQuery?: string
+  songTitle?: string
+  songArtist?: string
+  songArtwork?: string
 }
 
 export interface OrgStats {

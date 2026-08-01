@@ -74,6 +74,32 @@ create table polls (
   is_open boolean not null default true
 );
 
+create table freedom_wall (
+  id uuid primary key default gen_random_uuid(),
+  message text not null,
+  color text not null default 'yellow' check (color in ('yellow','pink','blue','green','orange')),
+  created_at timestamptz default now(),
+  likes int not null default 0,
+  is_deleted boolean not null default false,
+  deleted_at timestamptz,
+  deleted_by text
+);
+
+create table freedom_wall_meta (
+  id uuid primary key default gen_random_uuid(),
+  message_id uuid not null references freedom_wall(id) on delete cascade,
+  nickname text not null default '',
+  sender_name text not null default '',
+  recipient_name text not null default '',
+  spotify_url text,
+  spotify_query text,
+  song_title text,
+  song_artist text,
+  song_artwork text,
+  created_at timestamptz default now(),
+  unique (message_id)
+);
+
 create table poll_options (
   id uuid primary key default gen_random_uuid(),
   poll_id uuid references polls(id) on delete cascade,
@@ -98,6 +124,8 @@ alter table budget_items enable row level security;
 alter table updates enable row level security;
 alter table news enable row level security;
 alter table polls enable row level security;
+alter table freedom_wall enable row level security;
+alter table freedom_wall_meta enable row level security;
 alter table poll_options enable row level security;
 alter table reports enable row level security;
 alter table poll_votes enable row level security;
@@ -108,6 +136,8 @@ create policy "public read" on budget_items for select using (true);
 create policy "public read" on updates for select using (true);
 create policy "public read" on news for select using (true);
 create policy "public read" on polls for select using (true);
+create policy "public read" on freedom_wall for select using (true);
+create policy "public read" on freedom_wall_meta for select using (true);
 create policy "public read" on poll_options for select using (true);
 create policy "public read" on reports for select using (true);
 
@@ -115,6 +145,21 @@ create policy "public read" on reports for select using (true);
 create policy "anyone can submit a report" on reports for insert with check (true);
 create policy "authenticated users can update reports" on reports for update using (auth.role() = 'authenticated');
 create policy "authenticated users can delete reports" on reports for delete using (auth.role() = 'authenticated');
+
+-- Community wall: anyone can create notes, but only authenticated admins can remove them.
+create policy "anyone can insert freedom wall posts" on freedom_wall
+  for insert with check (true);
+create policy "authenticated admins can update freedom wall posts" on freedom_wall
+  for update using (auth.role() = 'authenticated');
+create policy "authenticated admins can delete freedom wall posts" on freedom_wall
+  for delete using (auth.role() = 'authenticated');
+
+create policy "anyone can insert freedom wall meta" on freedom_wall_meta
+  for insert with check (true);
+create policy "authenticated admins can update freedom wall meta" on freedom_wall_meta
+  for update using (auth.role() = 'authenticated');
+create policy "authenticated admins can delete freedom wall meta" on freedom_wall_meta
+  for delete using (auth.role() = 'authenticated');
 
 -- Voting: allow signed-in public users to vote; one row per (poll, user) enforced above.
 create policy "public users can vote" on poll_votes
