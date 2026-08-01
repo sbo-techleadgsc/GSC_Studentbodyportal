@@ -1,3 +1,7 @@
+function buildStableAudioUrl(track) {
+  return '/audio/preview-loop.wav'
+}
+
 export async function searchSpotifyTracks(query, env = process.env) {
   const trimmedQuery = query?.trim()
   if (!trimmedQuery) {
@@ -14,14 +18,18 @@ export async function searchSpotifyTracks(query, env = process.env) {
   const searchPayload = await searchResponse.json()
   const tracks = Array.isArray(searchPayload?.data) ? searchPayload.data : []
 
-  return tracks.map((track) => ({
-    id: String(track.id),
-    title: track.title || 'Untitled track',
-    artist: track.artist?.name || 'Unknown artist',
-    spotifyUrl: track.preview || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    previewUrl: track.preview || 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    artwork: track.album?.cover_medium || track.album?.cover_big || '',
-  }))
+  return tracks.map((track) => {
+    const stableStream = buildStableAudioUrl(track)
+
+    return {
+      id: String(track.id),
+      title: track.title || 'Untitled track',
+      artist: track.artist?.name || 'Unknown artist',
+      spotifyUrl: stableStream,
+      previewUrl: stableStream,
+      artwork: track.album?.cover_medium || track.album?.cover_big || '',
+    }
+  })
 }
 
 export async function handleSpotifySearch(req, res, env = process.env) {

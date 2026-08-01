@@ -137,6 +137,30 @@ function getSpotifyAudioUrl(value: string): string | null {
   return null
 }
 
+function buildLyricsUrl(title: string, artist: string): string | null {
+  const cleanTitle = title?.trim()
+  const cleanArtist = artist?.trim()
+
+  if (!cleanTitle || !cleanArtist) return null
+
+  return `https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`
+}
+
+function parseLyrics(text: string): string[] {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.replace(/\[.*?\]/g, '').trim())
+    .filter((line) => line.length > 0)
+}
+
+function getLyricIndexForTime(currentTime: number, lyrics: string[], duration: number): number {
+  if (lyrics.length === 0) return 0
+
+  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 30
+  const step = Math.max(2.2, safeDuration / Math.max(lyrics.length, 1))
+  return Math.min(lyrics.length - 1, Math.max(0, Math.floor(currentTime / step)))
+}
+
 function buildDisplayName(value: string): string {
   return value.trim()
 }
@@ -161,8 +185,13 @@ export default function Community() {
   const [likedMessageIds, setLikedMessageIds] = useState<string[]>(() => getLikedMessageIds())
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [activePreviewUrl, setActivePreviewUrl] = useState<string | null>(null)
+  const [activePlayback, setActivePlayback] = useState<{ url: string; title: string; artist: string } | null>(null)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
   const [previewError, setPreviewError] = useState('')
+  const [lyricsLines, setLyricsLines] = useState<string[]>([])
+  const [lyricsStatus, setLyricsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [lyricsNotice, setLyricsNotice] = useState('')
+  const [activeLyricIndex, setActiveLyricIndex] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -422,7 +451,65 @@ export default function Community() {
     return ROTATIONS[Math.floor(Math.random() * ROTATIONS.length)]
   }
 
-  async function togglePreview(url: string) {
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio || lyricsLines.length === 0 || !activePlayback?.url) return
+
+    const syncLyrics = () => {
+      const nextIndex = getLyricIndexForTime(audio.currentTime, lyricsLines, audio.duration)
+      setActiveLyricIndex((current) => (current === nextIndex ? current : nextIndex))
+    }
+
+    syncLyrics()
+    audio.addEventListener('timeupdate', syncLyrics)
+    audio.addEventListener('play', syncLyrics)
+    audio.addEventListener('seeked', syncLyrics)
+
+    return () => {
+      audio.removeEventListener('timeupdate', syncLyrics)
+      audio.removeEventListener('play', syncLyrics)
+      audio.removeEventListener('seeked', syncLyrics)
+    }
+  }, [activePlayback?.url, lyricsLines])
+
+  async function loadLyrics(title: string, artist: string) {
+    const lyricsUrl = buildLyricsUrl(title, artist)
+
+    if (!lyricsUrl) {
+      setLyricsLines([])
+      setLyricsStatus('error')
+      setLyricsNotice('Lyrics unavailable for this track.')
+      setActiveLyricIndex(0)
+      return
+    }
+
+    setLyricsStatus('loading')
+    setLyricsNotice('')
+    setLyricsLines([])
+    setActiveLyricIndex(0)
+
+    try {
+      const response = await fetch(lyricsUrl)
+      if (!response.ok) throw new Error('Unable to load lyrics')
+
+      const payload = await response.json()
+      const lines = parseLyrics(payload?.lyrics ?? '')
+
+      if (lines.length === 0) {
+        setLyricsStatus('error')
+        setLyricsNotice('No lyrics available for this track yet.')
+        return
+      }
+
+      setLyricsLines(lines)
+      setLyricsStatus('ready')
+    } catch {
+      setLyricsStatus('error')
+      setLyricsNotice('Lyrics are not available for this track right now.')
+    }
+  }
+
+  async function togglePreview(url: string, title?: string, artist?: string) {
     if (!url) return
 
     const audio = audioRef.current
@@ -432,13 +519,40 @@ export default function Community() {
       audio.pause()
       setIsPreviewPlaying(false)
       setActivePreviewUrl(null)
+      setActivePlayback(null)
       return
     }
 
+    const playbackMeta = { url, title: title ?? '', artist: artist ?? '' }
+    setActivePlayback(playbackMeta)
+    setActiveLyricIndex(0)
+    setPreviewError('')
+
+    if (title || artist) {
+      void loadLyrics(title ?? '', artist ?? '')
+    } else {
+      setLyricsLines([])
+      setLyricsStatus('idle')
+      setLyricsNotice('')
+    }
+
+    const startFromBeginning = () => {
+      audio.currentTime = 0
+      setActiveLyricIndex(0)
+      audio.removeEventListener('loadedmetadata', startFromBeginning)
+      audio.removeEventListener('canplay', startFromBeginning)
+    }
+
+    audio.pause()
     audio.src = url
     audio.load()
+    audio.currentTime = 0
+    audio.addEventListener('loadedmetadata', startFromBeginning, { once: true })
+    audio.addEventListener('canplay', startFromBeginning, { once: true })
+
     try {
       await audio.play()
+      audio.currentTime = 0
       setActivePreviewUrl(url)
       setIsPreviewPlaying(true)
       setPreviewError('')
@@ -732,7 +846,7 @@ export default function Community() {
                       )}
 
                       {spotifyUrl ? (
-                        <div className="mt-3 overflow-hidden rounded-[24px] border border-emerald-600/20 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 p-3 text-white shadow-lg">
+                        <div className="mt-3 overflow-hidden rounded-[24px] border border-emerald-600/20 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 p-3 text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
                           <div className="flex items-center gap-3">
                             {meta.songArtwork ? (
                               <img src={meta.songArtwork} alt={meta.songTitle || 'Album artwork'} className="h-14 w-14 rounded-xl object-cover shadow-md" />
@@ -749,21 +863,55 @@ export default function Community() {
 
                             <button
                               type="button"
-                              onClick={() => void togglePreview(spotifyUrl)}
-                              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                              onClick={() => void togglePreview(spotifyUrl, meta.songTitle || '', meta.songArtist || '')}
+                              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
                               aria-label={isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Pause preview' : 'Play preview'}
                             >
                               {isPreviewPlaying && activePreviewUrl === spotifyUrl ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? (
+                                <span className="absolute inset-0 rounded-full border-2 border-emerald-300/60 animate-ping" />
+                              ) : null}
                             </button>
                           </div>
 
-                          <div className="mt-3 flex items-center gap-2">
-                            <div className="h-1.5 flex-1 rounded-full bg-white/15">
-                              <div className={`h-1.5 rounded-full bg-emerald-300 transition-all ${isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'w-2/3' : 'w-1/4'}`} />
+                          <div className="mt-3 rounded-[18px] border border-white/10 bg-black/10 p-3">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15">
+                                  <Music4 className="h-4 w-4" />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-100/70">Now playing</p>
+                                  <p className="truncate text-sm font-semibold text-white">{meta.songTitle || 'Untitled track'}</p>
+                                </div>
+                              </div>
+                              <span className="text-[10px] uppercase tracking-[0.24em] text-emerald-100/70">
+                                {isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Live' : 'Preview'}
+                              </span>
                             </div>
-                            <span className="text-[10px] uppercase tracking-[0.24em] text-emerald-100/70">
-                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Playing' : 'Preview'}
-                            </span>
+
+                            {activePreviewUrl === spotifyUrl ? (
+                              <div className="mt-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-100/70">Live lyrics</p>
+                                  <span className="text-[10px] text-emerald-100/70">
+                                    {lyricsStatus === 'loading' ? 'Loading…' : lyricsStatus === 'ready' ? 'Synced' : 'Preview'}
+                                  </span>
+                                </div>
+
+                                <div className="mt-2 min-h-[40px]">
+                                  {lyricsStatus === 'loading' ? (
+                                    <p className="text-sm text-emerald-50/90">Finding lyrics for this track…</p>
+                                  ) : null}
+                                  {lyricsStatus === 'error' ? (
+                                    <p className="text-sm text-amber-100">{lyricsNotice}</p>
+                                  ) : null}
+                                  {lyricsStatus === 'ready' && lyricsLines.length > 0 ? (
+                                    <p className="text-sm font-semibold text-white">{lyricsLines[activeLyricIndex] || lyricsLines[0]}</p>
+                                  ) : null}
+                                </div>
+                              </div>
+                            ) : null}
                           </div>
 
                           {previewError && activePreviewUrl === spotifyUrl ? (
