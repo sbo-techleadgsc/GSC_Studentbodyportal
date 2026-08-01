@@ -319,634 +319,17 @@ function toCamelPollOption(row: any): PollOption {
 
 async function ensureGuestSession(): Promise<void> {
   if (!supabase) return
-  if (supabase.auth.getSession) {
-    const { data } = await supabase.auth.getSession()
-    if (data.session) return
-  }
-
   try {
-    await supabase.auth.signInAnonymously()
-  } catch {
-    // ignore and fall back to local-only vote tracking
+    const { data } = await supabase.auth.getSession()
+    if (!data.session) {
+      await supabase.auth.signInAnonymously()
+    }
+  } catch (err) {
+    console.error('Guest authorization setup breakdown:', err)
   }
 }
 
-let realtimeChannel: ReturnType<NonNullable<typeof supabase>['channel']> | null = null
-
-function setupRealtime() {
-  if (!supabase || realtimeChannel) return
-
-  realtimeChannel = supabase.channel('table-changes', {
-    config: {
-      broadcast: { self: false },
-      presence: { key: 'sbo' },
-    },
-  })
-
-  ;['officers', 'promises', 'budget_items', 'updates', 'reports', 'news', 'polls', 'poll_options', 'poll_votes'].forEach((table) => {
-    realtimeChannel?.on('postgres_changes', { event: '*', schema: 'public', table }, () => {
-      dispatchChange(table)
-    })
-  })
-
-  realtimeChannel.subscribe()
-}
-
-setupRealtime()
-
-if (typeof window !== 'undefined' && isSupabaseConfigured) {
-  console.info('[store] Supabase is active; data will come from the remote database when the schema exists.')
-}
-
-// ── Officers ───────────────────────────────────────────────
-export const officersDb = {
-  async list(): Promise<Officer[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from('officers').select('*').order('order', { ascending: true })
-      if (!error && data) {
-        return data.map(toCamelOfficer).sort((a, b) => a.order - b.order)
-      }
-    }
-    return []
-  },
-  async upsert(officer: Omit<Officer, 'id'> & { id?: string }): Promise<Officer> {
-    const record: Officer = { ...officer, id: officer.id ?? uid() } as Officer
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('officers')
-        .upsert(toSnakeOfficer(record), { onConflict: 'id' })
-        .select()
-        .single()
-
-      if (!error && data) {
-        dispatchChange(KEYS.officers)
-        return toCamelOfficer(data)
-      }
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('officers').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.officers)
-        return
-      }
-    }
-    throw new Error('Supabase is not configured')
-  },
-}
-
-// ── Promises ───────────────────────────────────────────────
-export const promisesDb = {
-  async list(): Promise<Promise_[]> {
-    if (supabase) {
-      const { data: promisesData, error: promisesError } = await supabase.from('promises').select('*')
-      if (!promisesError && promisesData) {
-        const { data: officersData } = await supabase.from('officers').select('id, name')
-        const officerNames = new Map((officersData ?? []).map((row: any) => [row.id, row.name]))
-        return promisesData.map((row: any) => toCamelPromise(row, officerNames.get(row.officer_id)))
-      }
-    }
-    return []
-  },
-  async upsert(item: Omit<Promise_, 'id' | 'updatedAt'> & { id?: string }): Promise<Promise_> {
-    const record: Promise_ = { ...item, id: item.id ?? uid(), updatedAt: nowISO() } as Promise_
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('promises')
-        .upsert(toSnakePromise(record), { onConflict: 'id' })
-        .select()
-        .single()
-
-      if (!error && data) {
-        dispatchChange(KEYS.promises)
-        return toCamelPromise(data)
-      }
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('promises').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.promises)
-        return
-      }
-    }
-    throw new Error('Supabase is not configured')
-  },
-}
-
-// ── Budget ─────────────────────────────────────────────────
-export const budgetDb = {
-  async list(): Promise<BudgetItem[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from('budget_items').select('*')
-      if (!error && data) {
-        return data.map(toCamelBudget)
-      }
-    }
-    return []
-  },
-  async upsert(item: Omit<BudgetItem, 'id'> & { id?: string }): Promise<BudgetItem> {
-    const record: BudgetItem = { ...item, id: item.id ?? uid() } as BudgetItem
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('budget_items')
-        .upsert(toSnakeBudget(record), { onConflict: 'id' })
-        .select()
-        .single()
-
-      if (!error && data) {
-        dispatchChange(KEYS.budget)
-        return toCamelBudget(data)
-      }
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('budget_items').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.budget)
-        return
-      }
-    }
-    throw new Error('Supabase is not configured')
-  },
-}
-
-// ── Updates (live meeting / decision feed) ────────────────
-export const updatesDb = {
-  async list(): Promise<UpdateEntry[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from('updates').select('*')
-      if (!error && data) {
-        return data.map(toCamelUpdate).sort((a, b) => (a.date < b.date ? 1 : -1))
-      }
-    }
-    return []
-  },
-  async upsert(item: Omit<UpdateEntry, 'id'> & { id?: string }): Promise<UpdateEntry> {
-    const record: UpdateEntry = { ...item, id: item.id ?? uid() } as UpdateEntry
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('updates')
-        .upsert(toSnakeUpdate(record), { onConflict: 'id' })
-        .select()
-        .single()
-
-      if (!error && data) {
-        dispatchChange(KEYS.updates)
-        return toCamelUpdate(data)
-      }
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('updates').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.updates)
-        return
-      }
-    }
-    throw new Error('Supabase is not configured')
-  },
-}
-
-// ── Reports ────────────────────────────────────────────────
-let reportCounter = 1003
-
-export const reportsDb = {
-  async list(): Promise<Report[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from('reports').select('*')
-      if (error) {
-        console.error('[reportsDb] list failed', error)
-        return []
-      }
-      if (data) {
-        return data.map(toCamelReport).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-      }
-    }
-    return []
-  },
-  async submit(input: {
-    visibility: 'public' | 'anonymous'
-    fullName?: string
-    email?: string
-    category: string
-    content: string
-  }): Promise<Report> {
-    const record: Report = {
-      id: uid(),
-      trackingCode: `REPORT-${1000 + reportCounter + 1}`,
-      visibility: input.visibility,
-      fullName: input.visibility === 'public' ? input.fullName : undefined,
-      email: input.visibility === 'public' ? input.email : undefined,
-      category: input.category,
-      content: input.content,
-      status: 'new',
-      createdAt: nowISO(),
-    }
-    reportCounter += 1
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('reports')
-        .insert(toSnakeReport(record))
-        .select()
-        .single()
-
-      if (error) {
-        console.error('[reportsDb] submit failed', error)
-        throw new Error(error.message || 'Unable to submit report right now.')
-      }
-
-      dispatchChange(KEYS.reports)
-      return toCamelReport(data)
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async updateStatus(id: string, status: Report['status'], adminNotes?: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('reports').update({ status, admin_notes: adminNotes }).eq('id', id)
-      if (error) {
-        console.error('[reportsDb] updateStatus failed', error)
-        throw new Error(error.message || 'Unable to update report status.')
-      }
-      dispatchChange(KEYS.reports)
-      return
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async findByTrackingCode(code: string): Promise<Report | undefined> {
-    if (supabase) {
-      const { data, error } = await supabase.from('reports').select('*').eq('tracking_code', code.trim())
-      if (error) {
-        console.error('[reportsDb] findByTrackingCode failed', error)
-        return undefined
-      }
-      if (data && data.length > 0) {
-        return toCamelReport(data[0])
-      }
-      return undefined
-    }
-    return undefined
-  },
-  async findByEmail(email: string): Promise<Report[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from('reports').select('*').eq('email', email.trim().toLowerCase())
-      if (error) {
-        console.error('[reportsDb] findByEmail failed', error)
-        return []
-      }
-      if (data && data.length > 0) {
-        return data.map(toCamelReport).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-      }
-      return []
-    }
-    return []
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('reports').delete().eq('id', id)
-      if (error) {
-        console.error('[reportsDb] remove failed', error)
-        throw new Error(error.message || 'Unable to delete report.')
-      }
-      dispatchChange(KEYS.reports)
-      return
-    }
-    throw new Error('Supabase is not configured')
-  },
-}
-
-// ── News ───────────────────────────────────────────────────
-export const newsDb = {
-  async list(): Promise<NewsPost[]> {
-    if (supabase) {
-      const { data, error } = await supabase.from('news').select('*')
-      if (!error && data) {
-        return data.map(toCamelNews).sort((a, b) => (a.date < b.date ? 1 : -1))
-      }
-    }
-    return []
-  },
-  async upsert(item: Omit<NewsPost, 'id'> & { id?: string }): Promise<NewsPost> {
-    const record: NewsPost = { ...item, id: item.id ?? uid() } as NewsPost
-
-    if (supabase) {
-      const { data, error } = await supabase
-        .from('news')
-        .upsert(toSnakeNews(record), { onConflict: 'id' })
-        .select()
-        .single()
-
-      if (!error && data) {
-        dispatchChange(KEYS.news)
-        return toCamelNews(data)
-      }
-    }
-
-    throw new Error('Supabase is not configured')
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('news').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.news)
-        return
-      }
-    }
-    throw new Error('Supabase is not configured')
-  },
-}
-
-// ── Freedom Wall ───────────────────────────────────────────
-export const freedomWallDb = {
-  async list(): Promise<FreedomMessage[]> {
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('freedom_wall')
-          .select('*, freedom_wall_meta(*)')
-          .eq('is_deleted', false)
-          .order('created_at', { ascending: false })
-
-        if (!error && data) {
-          return data.map(toCamelFreedomMessage)
-        }
-      } catch (error) {
-        console.warn('[freedomWallDb] Supabase list failed, using local fallback', error)
-      }
-    }
-
-    const localMessages = readFreedomWallMessages()
-      .filter((message) => !message.isDeleted)
-      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
-    return localMessages
-  },
-  async submit(input: { message: string; color: NoteColor; meta?: Record<string, string> }): Promise<FreedomMessage> {
-    const record: FreedomMessage = {
-      id: uid(),
-      message: input.message,
-      color: input.color,
-      createdAt: nowISO(),
-      likes: 0,
-      nickname: input.meta?.nickname ?? '',
-      senderName: input.meta?.senderName ?? '',
-      recipientName: input.meta?.recipientName ?? '',
-      spotifyUrl: input.meta?.spotifyUrl ?? '',
-      spotifyQuery: input.meta?.spotifyQuery ?? '',
-      songTitle: input.meta?.songTitle ?? '',
-      songArtist: input.meta?.songArtist ?? '',
-      songArtwork: input.meta?.songArtwork ?? '',
-    }
-
-    if (supabase) {
-      try {
-        const { data: inserted, error: insertError } = await supabase
-          .from('freedom_wall')
-          .insert(toSnakeFreedomMessage(record))
-          .select()
-          .single()
-
-        if (!insertError && inserted) {
-          const metaPayload = toSnakeFreedomMeta(record)
-          await supabase.from('freedom_wall_meta').insert(metaPayload)
-
-          const { data: withMeta, error: metaError } = await supabase
-            .from('freedom_wall')
-            .select('*, freedom_wall_meta(*)')
-            .eq('id', inserted.id)
-            .single()
-
-          if (!metaError && withMeta) {
-            dispatchChange(KEYS.freedomWall)
-            return toCamelFreedomMessage(withMeta)
-          }
-
-          dispatchChange(KEYS.freedomWall)
-          return toCamelFreedomMessage(inserted)
-        }
-      } catch (error) {
-        console.warn('[freedomWallDb] Supabase submit failed, using local fallback', error)
-      }
-    }
-
-    const nextMessages = [record, ...readFreedomWallMessages()]
-    writeFreedomWallMessages(nextMessages)
-    dispatchChange(KEYS.freedomWall)
-    return record
-  },
-  async like(id: string): Promise<void> {
-    if (supabase) {
-      try {
-        const { data: current } = await supabase.from('freedom_wall').select('likes').eq('id', id).single()
-        const currentLikes = current?.likes ?? 0
-        const { error } = await supabase.from('freedom_wall').update({ likes: currentLikes + 1 }).eq('id', id)
-        if (!error) {
-          dispatchChange(KEYS.freedomWall)
-          return
-        }
-      } catch (error) {
-        console.warn('[freedomWallDb] Supabase like failed, using local fallback', error)
-      }
-    }
-
-    const nextMessages = readFreedomWallMessages().map((message) =>
-      message.id === id ? { ...message, likes: message.likes + 1 } : message,
-    )
-    writeFreedomWallMessages(nextMessages)
-    dispatchChange(KEYS.freedomWall)
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      try {
-        const { error } = await supabase
-          .from('freedom_wall')
-          .update({ is_deleted: true, deleted_at: new Date().toISOString(), deleted_by: 'admin' })
-          .eq('id', id)
-
-        if (!error) {
-          dispatchChange(KEYS.freedomWall)
-          return
-        }
-      } catch (error) {
-        console.warn('[freedomWallDb] Supabase remove failed, using local fallback', error)
-      }
-    }
-
-    const nextMessages = readFreedomWallMessages().map((message) => (message.id === id ? { ...message, isDeleted: true, deletedAt: new Date().toISOString(), deletedBy: 'admin' } : message))
-    writeFreedomWallMessages(nextMessages)
-    dispatchChange(KEYS.freedomWall)
-  },
-}
-
-// ── Polls ──────────────────────────────────────────────────
-export const pollsDb = {
-  async list(): Promise<Poll[]> {
-    if (supabase) {
-      const { data: pollsData, error: pollsError } = await supabase.from('polls').select('*')
-      if (!pollsError && pollsData && pollsData.length > 0) {
-        const { data: optionsData, error: optionsError } = await supabase.from('poll_options').select('*')
-        if (!optionsError) {
-          const optionsByPoll = new Map<string, PollOption[]>()
-          ;(optionsData ?? []).forEach((row: any) => {
-            const pool = optionsByPoll.get(row.poll_id) ?? []
-            pool.push(toCamelPollOption(row))
-            optionsByPoll.set(row.poll_id, pool)
-          })
-
-          // Force polls to be open on localhost for testing
-          const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-          
-          return pollsData.map((row: any) => {
-            const poll = toCamelPoll(row, optionsByPoll.get(row.id) ?? [])
-            if (isLocalhost) {
-              poll.isOpen = true
-            }
-            return poll
-          })
-        }
-      }
-    }
-    return []
-  },
-  async upsert(item: Omit<Poll, 'id' | 'options'> & { id?: string; options: (Omit<PollOption, 'id' | 'votes'> & { id?: string; votes?: number })[] }): Promise<Poll> {
-    const record: Poll = {
-      ...item,
-      id: item.id ?? uid(),
-      options: item.options.map((o) => ({ id: o.id ?? uid(), label: o.label, votes: o.votes ?? 0 })),
-    }
-
-    if (supabase) {
-      const { data, error } = await supabase.from('polls').upsert(toSnakePoll(record), { onConflict: 'id' }).select().single()
-      if (!error && data) {
-        const optionRows = record.options.map((option) => ({ id: option.id, poll_id: record.id, label: option.label, votes: option.votes }))
-        await supabase.from('poll_options').delete().eq('poll_id', record.id)
-        await supabase.from('poll_options').upsert(optionRows, { onConflict: 'id' })
-        dispatchChange(KEYS.polls)
-        return toCamelPoll(data, record.options)
-      }
-    }
-
-    const all = read(KEYS.polls, seedPolls)
-    const idx = all.findIndex((p) => p.id === record.id)
-    if (idx >= 0) all[idx] = record
-    else all.unshift(record)
-    write(KEYS.polls, all)
-    return record
-  },
-  async toggleOpen(id: string, isOpen: boolean): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('polls').update({ is_open: isOpen }).eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.polls)
-        return
-      }
-    }
-
-    const all = read(KEYS.polls, seedPolls)
-    const idx = all.findIndex((p) => p.id === id)
-    if (idx >= 0) {
-      all[idx] = { ...all[idx], isOpen }
-      write(KEYS.polls, all)
-    }
-  },
-  async vote(pollId: string, optionId: string): Promise<{ ok: boolean; reason?: string }> {
-    const voted = read<Record<string, string>>(KEYS.votedPolls, {})
-    if (voted[pollId]) return { ok: false, reason: 'already-voted' }
-
-    if (supabase) {
-      // Check if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser()
-      const userId = user?.id
-
-      // If no user, try to get a guest session
-      if (!userId) {
-        await ensureGuestSession()
-      }
-
-      const { data: pollData } = await supabase.from('polls').select('id, is_open').eq('id', pollId).single()
-      // Skip closed check for localhost development
-      const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      if (!pollData?.is_open && !isLocalhost) return { ok: false, reason: 'closed' }
-
-      const { data: optionData } = await supabase.from('poll_options').select('id').eq('id', optionId).single()
-      if (!optionData) return { ok: false, reason: 'closed' }
-
-      // Get the current user ID (either authenticated or guest)
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      const currentUserId = currentUser?.id
-
-      if (!currentUserId) {
-        console.error('[pollsDb] No user ID available for voting')
-        return { ok: false, reason: 'no-user' }
-      }
-
-      const { error } = await supabase.from('poll_votes').insert({ poll_id: pollId, option_id: optionId, user_id: currentUserId })
-      if (!error) {
-        // Get current votes and increment
-        const { data: currentOption } = await supabase.from('poll_options').select('votes').eq('id', optionId).single()
-        const currentVotes = currentOption?.votes ?? 0
-        await supabase.from('poll_options').update({ votes: currentVotes + 1 }).eq('id', optionId)
-        
-        voted[pollId] = optionId
-        write(KEYS.votedPolls, voted)
-        dispatchChange(KEYS.polls)
-        return { ok: true }
-      }
-
-      console.error('[pollsDb] Vote failed:', error)
-      if (error?.message?.includes('violates unique constraint') || error?.message?.includes('duplicate')) {
-        return { ok: false, reason: 'already-voted' }
-      }
-      return { ok: false, reason: error?.message }
-    }
-
-    const all = read(KEYS.polls, seedPolls)
-    const poll = all.find((p) => p.id === pollId)
-    // Skip closed check for localhost development
-    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-    if (!poll || (!poll.isOpen && !isLocalhost)) return { ok: false, reason: 'closed' }
-
-    poll.options = poll.options.map((o) => (o.id === optionId ? { ...o, votes: o.votes + 1 } : o))
-    write(KEYS.polls, all)
-
-    voted[pollId] = optionId
-    write(KEYS.votedPolls, voted)
-    return { ok: true }
-  },
-  async remove(id: string): Promise<void> {
-    if (supabase) {
-      const { error } = await supabase.from('polls').delete().eq('id', id)
-      if (!error) {
-        dispatchChange(KEYS.polls)
-        return
-      }
-    }
-    write(KEYS.polls, read(KEYS.polls, seedPolls).filter((p) => p.id !== id))
-  },
-  getMyVote(pollId: string): string | undefined {
-    const voted = read<Record<string, string>>(KEYS.votedPolls, {})
-    return voted[pollId]
-  },
-}
-// ── Site settings (maintenance mode, etc.) ────────────────────
+// ── Site settings Data Schema ──────────────────────────────────────
 export interface SiteSettings {
   maintenanceMode: boolean
   maintenanceMessage: string
@@ -957,19 +340,72 @@ const defaultSettings: SiteSettings = {
   maintenanceMessage: "We're making a few updates. Check back shortly.",
 }
 
+function toCamelSettings(row: any): SiteSettings {
+  return {
+    maintenanceMode: row.maintenance_mode,
+    maintenanceMessage: row.maintenance_message,
+  }
+}
+
+// ── Central Settings Store Layer ───────────────────────────────────
 export const settingsDb = {
   async get(): Promise<SiteSettings> {
-    return read(KEYS.settings, defaultSettings)
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data, error } = await supabase
+          .from('sbo_settings')
+          .select('maintenance_mode, maintenance_message')
+          .eq('id', 1)
+          .single()
+
+        if (error || !data) throw error
+        return toCamelSettings(data)
+      } catch (err) {
+        console.error('Supabase settings query failure:', err)
+        return defaultSettings
+      }
+    }
+    return read<SiteSettings>(KEYS.settings, defaultSettings)
   },
+
   async update(patch: Partial<SiteSettings>): Promise<SiteSettings> {
-    const current = read(KEYS.settings, defaultSettings)
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const updatePayload: any = {}
+        if (patch.maintenanceMode !== undefined) updatePayload.maintenance_mode = patch.maintenanceMode
+        if (patch.maintenanceMessage !== undefined) updatePayload.maintenance_message = patch.maintenanceMessage
+
+        const { error } = await supabase
+          .from('sbo_settings')
+          .update(updatePayload)
+          .eq('id', 1)
+
+        if (error) throw error
+        
+        dispatchChange(KEYS.settings)
+        return this.get()
+      } catch (err) {
+        console.error('Supabase settings mutate failure:', err)
+      } // 👈 Added missing closing try-catch bracket
+    }
+
+    const current = read<SiteSettings>(KEYS.settings, defaultSettings)
     const next = { ...current, ...patch }
     write(KEYS.settings, next)
     return next
-  },
+  }, // 👈 Properly closed the update method
 }
-// ── Reset helper (handy for demoing) ─────────────────────────
-export function resetAllData() {
-  Object.values(KEYS).forEach((k) => localStorage.removeItem(k))
-  bus.dispatchEvent(new CustomEvent('change', { detail: 'all' }))
+
+// ── Realtime Synchronization Channels ──────────────────────────────
+if (isSupabaseConfigured && supabase) {
+  supabase
+    .channel('public:sbo_settings')
+    .on(
+      'postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'sbo_settings', filter: 'id=eq.1' },
+      () => {
+        dispatchChange(KEYS.settings) 
+      }
+    )
+    .subscribe()
 }
