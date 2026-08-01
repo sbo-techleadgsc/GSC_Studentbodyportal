@@ -4,6 +4,7 @@ import { PublicLayout } from '@/components/layout/PublicLayout'
 import { AdminGuard } from '@/components/admin/AdminGuard'
 import { useEffect } from 'react'
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 import Home from '@/pages/Home'
 import Officials from '@/pages/Officials'
@@ -92,6 +93,7 @@ export default function App() {
       <BrowserRouter>
         <AppContent />
         <Analytics />
+        <SpeedInsights />
       </BrowserRouter>
     </AdminAuthProvider>
   )
