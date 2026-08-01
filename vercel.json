@@ -1,6 +1,17 @@
 {
   "rewrites": [
     {
+      "source": "/((?!under-maintenance.html|gsc_logo.svg|favicon.svg|icons.svg).*)",
+      "has": [
+        {
+          "type": "env",
+          "key": "EDGE_CONFIG_IS_IN_MAINTENANCE",
+          "value": "true"
+        }
+      ],
+      "destination": "/under-maintenance.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
