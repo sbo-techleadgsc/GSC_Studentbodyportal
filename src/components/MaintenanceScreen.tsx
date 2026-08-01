@@ -1,13 +1,35 @@
 import { Link } from 'react-router-dom'
 import { siteConfig } from '@/config/site'
 
-// Defining a clear interface blocks Vite from getting confused by the colon symbol
 interface MaintenanceProps {
   message: string
 }
 
-export function MaintenanceScreen(props: MaintenanceProps) {
-  const { message } = props; // Destructure safely inside the function body
+export function MaintenanceScreen({ message }: MaintenanceProps) {
+  let align: 'left' | 'center' | 'right' | 'justify' = 'center';
+  let cleanMessage = message || '';
+
+  // Safe Case-Insensitive Regex to catch tags with or without spaces
+  if (/\[left\]/i.test(cleanMessage)) {
+    align = 'left';
+    cleanMessage = cleanMessage.replace(/\[left\]/i, '').trim();
+  } else if (/\[right\]/i.test(cleanMessage)) {
+    align = 'right';
+    cleanMessage = cleanMessage.replace(/\[right\]/i, '').trim();
+  } else if (/\[justify\]/i.test(cleanMessage)) {
+    align = 'justify';
+    cleanMessage = cleanMessage.replace(/\[justify\]/i, '').trim();
+  } else if (/\[center\]/i.test(cleanMessage)) {
+    align = 'center';
+    cleanMessage = cleanMessage.replace(/\[center\]/i, '').trim();
+  }
+
+  const alignmentMap = {
+    left: 'text-left w-full',
+    center: 'text-center',
+    right: 'text-right w-full',
+    justify: 'text-justify'
+  };
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-navy-900 px-6 text-center">
@@ -19,7 +41,11 @@ export function MaintenanceScreen(props: MaintenanceProps) {
       <h1 className="mt-6 text-2xl font-extrabold text-white sm:text-3xl">
         {siteConfig.orgShortName} is down for maintenance
       </h1>
-      <p className="mt-3 max-w-md text-[15px] text-navy-100/75">{message}</p>
+      
+      {/* Added explicit width to ensure left/right rules push completely to the text block borders */}
+      <p className={`mt-3 max-w-md text-[15px] text-navy-100/75 whitespace-pre-line ${alignmentMap[align]}`}>
+        {cleanMessage}
+      </p>
       
       <Link
         to="/admin/login"
