@@ -2,8 +2,9 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "/index.html"
-    {
+      "destination": "/index.html",
+      "headers": [
+        {
           "key": "Content-Security-Policy",
           "value": "frame-ancestors 'self' https://sites.google.com/view/gsc-studentcouncil/"
         }
