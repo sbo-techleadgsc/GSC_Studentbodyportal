@@ -51,7 +51,6 @@ export default async function handler(request) {
       const { data, error } = await supabase
         .from('site_settings')
         .select('maintenance_mode, maintenance_message')
-        .eq('id', 'site_config')
         .single()
 
       if (!error && data) {

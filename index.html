@@ -20,7 +20,7 @@
         }
 
         // Fetch maintenance status from Supabase
-        fetch(`${SUPABASE_URL}/rest/v1/site_settings?id=eq.site_config&select=maintenance_mode,maintenance_message`, {
+        fetch(`${SUPABASE_URL}/rest/v1/site_settings?select=maintenance_mode,maintenance_message`, {
           headers: {
             'apikey': SUPABASE_ANON_KEY,
             'Authorization': `Bearer ${SUPABASE_ANON_KEY}`

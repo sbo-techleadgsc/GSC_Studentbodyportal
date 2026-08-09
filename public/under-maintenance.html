@@ -417,7 +417,7 @@
         
         // Only try to fetch if we have actual credentials
         if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-project.supabase.co')) {
-          const response = await fetch(`${supabaseUrl}/rest/v1/site_settings?id=eq.site_config&select=maintenance_message`, {
+          const response = await fetch(`${supabaseUrl}/rest/v1/site_settings?select=maintenance_message`, {
             headers: {
               'apikey': supabaseAnonKey,
               'Authorization': `Bearer ${supabaseAnonKey}`
