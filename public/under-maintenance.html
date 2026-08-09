@@ -206,7 +206,7 @@
 
       <!-- Main Message -->
       <h1>Under Maintenance</h1>
-      <p>
+      <p id="maintenance-message">
         The GSC Student Council portal is currently undergoing scheduled maintenance. 
         We're working hard to improve your experience and will be back shortly.
       </p>
@@ -249,5 +249,48 @@
       </p>
     </div>
   </div>
+
+  <script>
+    // Fetch maintenance message from Supabase
+    async function fetchMaintenanceMessage() {
+      try {
+        // Check if message is in URL query param (from Edge Function redirect)
+        const urlParams = new URLSearchParams(window.location.search);
+        const messageParam = urlParams.get('message');
+        
+        if (messageParam) {
+          document.getElementById('maintenance-message').textContent = decodeURIComponent(messageParam);
+          return;
+        }
+
+        // Otherwise fetch from Supabase
+        const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
+        const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+        
+        // Only try to fetch if we have actual credentials (not the placeholder)
+        if (!supabaseUrl.includes('your-project.supabase.co') && supabaseAnonKey) {
+          const response = await fetch(`${supabaseUrl}/rest/v1/site_settings?id=eq.site_config&select=maintenance_message`, {
+            headers: {
+              'apikey': supabaseAnonKey,
+              'Authorization': `Bearer ${supabaseAnonKey}`
+            }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data && data.length > 0 && data[0].maintenance_message) {
+              document.getElementById('maintenance-message').textContent = data[0].maintenance_message;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching maintenance message:', error);
+        // Keep default message if fetch fails
+      }
+    }
+
+    // Fetch message on page load
+    fetchMaintenanceMessage();
+  </script>
 </body>
 </html>

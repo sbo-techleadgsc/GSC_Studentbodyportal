@@ -1,0 +1,28 @@
+-- Create site_settings table for centralized maintenance mode control
+CREATE TABLE IF NOT EXISTS site_settings (
+  id TEXT PRIMARY KEY DEFAULT 'site_config',
+  maintenance_mode BOOLEAN DEFAULT false,
+  maintenance_message TEXT DEFAULT 'We are making a few updates. Check back shortly.',
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- Insert default settings if not exists
+INSERT INTO site_settings (id, maintenance_mode, maintenance_message)
+VALUES ('site_config', false, 'We are making a few updates. Check back shortly.')
+ON CONFLICT (id) DO NOTHING;
+
+-- Enable Row Level Security
+ALTER TABLE site_settings ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read access (for maintenance check)
+CREATE POLICY "Allow public read access to site_settings"
+  ON site_settings FOR SELECT
+  USING (true);
+
+-- Allow service role to update settings (via Edge Function with service role key)
+CREATE POLICY "Allow service role to update site_settings"
+  ON site_settings FOR UPDATE
+  USING (auth.role() = 'service_role');
+
+-- Create index for faster lookups
+CREATE INDEX IF NOT EXISTS idx_site_settings_id ON site_settings(id);
