@@ -2,15 +2,11 @@
   "rewrites": [
     {
       "source": "/api/maintenance",
-      "destination": "/api/maintenance.js"
+      "destination": "/api/maintenance-check.js"
     },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
-    },
-    {
-      "source": "/under-maintenance.html",
-      "destination": "/under-maintenance.html"
     },
     {
       "source": "/(.*)",

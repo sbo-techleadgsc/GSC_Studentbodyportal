@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Maintenance Mode - GSC Student Council Web Portal</title>
+  <script>
+    // Fallback environment variables for static HTML
+    window.SUPABASE_URL = 'https://mbpddyszpdpsfjlokvrt.supabase.co';
+    window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icGRkeXN6cGRwc2ZqbG9rdnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MTEzNTMsImV4cCI6MjEwMTA4NzM1M30.v3qZg2ztEpVkFDjKCew6Z1QAxfb60W6DzkL29ghtngw';
+  </script>
   <style>
     * {
       margin: 0;
@@ -22,16 +27,40 @@
     }
 
     .container {
-      max-width: 28rem;
+      max-width: 32rem;
       width: 100%;
+    }
+
+    @media (min-width: 640px) {
+      .container {
+        max-width: 36rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        max-width: 28rem;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      .container {
+        max-width: 32rem;
+      }
     }
 
     .card {
       background: white;
       border-radius: 1rem;
       box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      padding: 2rem;
+      padding: 1.5rem;
       text-align: center;
+    }
+
+    @media (min-width: 640px) {
+      .card {
+        padding: 2rem;
+      }
     }
 
     @media (min-width: 768px) {
@@ -43,12 +72,18 @@
     .logo-container {
       display: flex;
       justify-content: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .logo-container {
+        margin-bottom: 1.5rem;
+      }
     }
 
     .logo-circle {
-      height: 5rem;
-      width: 5rem;
+      height: 4rem;
+      width: 4rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -56,20 +91,40 @@
       background: #f1f5f9;
     }
 
+    @media (min-width: 640px) {
+      .logo-circle {
+        height: 5rem;
+        width: 5rem;
+      }
+    }
+
     .logo-circle img {
-      height: 3rem;
-      width: 3rem;
+      height: 2.5rem;
+      width: 2.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .logo-circle img {
+        height: 3rem;
+        width: 3rem;
+      }
     }
 
     .icon-container {
       display: flex;
       justify-content: center;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    @media (min-width: 640px) {
+      .icon-container {
+        margin-bottom: 1.5rem;
+      }
     }
 
     .icon-circle {
-      height: 4rem;
-      width: 4rem;
+      height: 3rem;
+      width: 3rem;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -77,44 +132,105 @@
       background: #fef3c7;
     }
 
+    @media (min-width: 640px) {
+      .icon-circle {
+        height: 4rem;
+        width: 4rem;
+      }
+    }
+
     .icon-circle svg {
-      height: 2rem;
-      width: 2rem;
+      height: 1.5rem;
+      width: 1.5rem;
       color: #d97706;
     }
 
+    @media (min-width: 640px) {
+      .icon-circle svg {
+        height: 2rem;
+        width: 2rem;
+      }
+    }
+
     h1 {
-      font-size: 1.875rem;
+      font-size: 1.5rem;
       font-weight: 700;
       color: #0f172a;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.2;
+    }
+
+    @media (min-width: 640px) {
+      h1 {
+        font-size: 1.75rem;
+        margin-bottom: 0.75rem;
+      }
+    }
+
+    @media (min-width: 768px) {
+      h1 {
+        font-size: 1.875rem;
+      }
     }
 
     p {
       color: #475569;
-      line-height: 1.625;
-      margin-bottom: 2rem;
+      line-height: 1.6;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+    }
+
+    @media (min-width: 640px) {
+      p {
+        font-size: 1rem;
+        line-height: 1.625;
+        margin-bottom: 2rem;
+      }
     }
 
     .info-section {
       display: flex;
       flex-direction: column;
-      gap: 1rem;
-      margin-bottom: 2rem;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (min-width: 640px) {
+      .info-section {
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
     }
 
     .info-item {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 0.75rem;
-      font-size: 0.875rem;
+      gap: 0.5rem;
+      font-size: 0.8rem;
       color: #64748b;
+      flex-wrap: wrap;
+    }
+
+    @media (min-width: 640px) {
+      .info-item {
+        font-size: 0.875rem;
+        gap: 0.75rem;
+        flex-wrap: nowrap;
+      }
     }
 
     .info-item svg {
-      height: 1rem;
-      width: 1rem;
+      height: 0.875rem;
+      width: 0.875rem;
+      flex-shrink: 0;
+    }
+
+    @media (min-width: 640px) {
+      .info-item svg {
+        height: 1rem;
+        width: 1rem;
+      }
     }
 
     .status-badge {
@@ -145,32 +261,63 @@
     }
 
     .status-text {
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       font-weight: 500;
       color: #b45309;
     }
 
+    @media (min-width: 640px) {
+      .status-text {
+        font-size: 0.875rem;
+      }
+    }
+
     .footer {
-      margin-top: 2rem;
-      padding-top: 1.5rem;
+      margin-top: 1.5rem;
+      padding-top: 1rem;
       border-top: 1px solid #f1f5f9;
     }
 
+    @media (min-width: 640px) {
+      .footer {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+      }
+    }
+
     .footer p {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       color: #94a3b8;
       margin-bottom: 0;
     }
 
+    @media (min-width: 640px) {
+      .footer p {
+        font-size: 0.75rem;
+      }
+    }
+
     .additional-resources {
-      margin-top: 1.5rem;
+      margin-top: 1rem;
       text-align: center;
     }
 
+    @media (min-width: 640px) {
+      .additional-resources {
+        margin-top: 1.5rem;
+      }
+    }
+
     .additional-resources p {
-      font-size: 0.875rem;
+      font-size: 0.8rem;
       color: #64748b;
       margin-bottom: 0;
+    }
+
+    @media (min-width: 640px) {
+      .additional-resources p {
+        font-size: 0.875rem;
+      }
     }
 
     .additional-resources a {
@@ -263,12 +410,13 @@
           return;
         }
 
-        // Otherwise fetch from Supabase
-        const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-        const supabaseAnonKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+        // Otherwise try to fetch from Supabase using environment variables if available
+        // Note: These are injected by Vite during build, or could be set by server
+        const supabaseUrl = window.VITE_SUPABASE_URL || window.SUPABASE_URL;
+        const supabaseAnonKey = window.VITE_SUPABASE_ANON_KEY || window.SUPABASE_ANON_KEY;
         
-        // Only try to fetch if we have actual credentials (not the placeholder)
-        if (!supabaseUrl.includes('your-project.supabase.co') && supabaseAnonKey) {
+        // Only try to fetch if we have actual credentials
+        if (supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('your-project.supabase.co')) {
           const response = await fetch(`${supabaseUrl}/rest/v1/site_settings?id=eq.site_config&select=maintenance_message`, {
             headers: {
               'apikey': supabaseAnonKey,

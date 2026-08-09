@@ -23,7 +23,6 @@ export default async function handler(request) {
     '/under-maintenance.html',
     '/admin',
     '/api/',
-    '/gsc_logo.svg',
     '/favicon',
   ]
 
