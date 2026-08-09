@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Users, CheckSquare, DollarSign, Radio, Flag, Newspaper, Vote, MessageSquare, ArrowRight } from 'lucide-react'
 import { Card } from '@/components/ui/Primitives'
-import { MaintenanceControl } from '@/components/admin/MaintenanceControl'
 import { useAdminAuth } from '@/context/AdminAuthContext'
 import { useLiveData } from '@/lib/hooks'
 import { officersDb, promisesDb, budgetDb, reportsDb, pollsDb } from '@/lib/store'
@@ -33,10 +32,6 @@ export default function AdminDashboard() {
     <div>
       <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">Welcome, {adminName}</h1>
       <p className="mt-1 text-ink-600">Here's what's happening across the portal.</p>
-
-      <div className="mt-6">
-        <MaintenanceControl variant="compact" />
-      </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat value={String(officers?.length ?? 0)} label="Officers" />

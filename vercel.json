@@ -5,16 +5,12 @@
       "destination": "/under-maintenance.html"
     },
     {
-      "source": "/api/maintenance",
-      "destination": "/api/maintenance-check.js"
-    },
-    {
       "source": "/api/(.*)",
       "destination": "/api/$1"
     },
     {
       "source": "/(.*)",
-      "destination": "/api/maintenance"
+      "destination": "/index.html"
     }
   ],
   "headers": [

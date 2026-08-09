@@ -964,9 +964,9 @@ export const settingsDb = {
         const { data, error } = await supabase
           .from('site_settings')
           .select('maintenance_mode, maintenance_message')
-          .eq('id', 'site_config')
-          .single()
-        
+          .limit(1)
+          .maybeSingle()
+
         if (!error && data) {
           return {
             maintenanceMode: data.maintenance_mode,
@@ -977,34 +977,41 @@ export const settingsDb = {
         console.error('Error fetching settings from Supabase:', err)
       }
     }
-    // Fallback to localStorage
     return read(KEYS.settings, defaultSettings)
   },
   async update(patch: Partial<SiteSettings>): Promise<SiteSettings> {
     const current = await this.get()
     const next = { ...current, ...patch }
-    
+
     if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase
-          .from('site_settings')
-          .update({
-            maintenance_mode: next.maintenanceMode,
-            maintenance_message: next.maintenanceMessage,
-          })
-          .eq('id', 'site_config')
-        
-        if (!error) {
-          dispatchChange('settings')
-          return next
-        }
-        console.error('Error updating settings in Supabase:', error)
-      } catch (err) {
-        console.error('Error updating settings in Supabase:', err)
+      const { data: row, error: readError } = await supabase
+        .from('site_settings')
+        .select('id')
+        .limit(1)
+        .maybeSingle()
+
+      if (readError) {
+        throw new Error(readError.message)
       }
+
+      const payload = {
+        maintenance_mode: next.maintenanceMode,
+        maintenance_message: next.maintenanceMessage,
+        updated_at: new Date().toISOString(),
+      }
+
+      const { error: writeError } = row
+        ? await supabase.from('site_settings').update(payload).eq('id', row.id)
+        : await supabase.from('site_settings').insert(payload)
+
+      if (writeError) {
+        throw new Error(writeError.message)
+      }
+
+      dispatchChange('settings')
+      return next
     }
-    
-    // Fallback to localStorage
+
     write(KEYS.settings, next)
     dispatchChange('settings')
     return next

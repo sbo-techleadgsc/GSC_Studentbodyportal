@@ -7,7 +7,7 @@ export default function AdminSettings() {
       <p className="mt-1 text-ink-600">Site-wide controls.</p>
 
       <div className="mt-6">
-        <MaintenanceControl variant="full" />
+        <MaintenanceControl />
       </div>
     </div>
   )

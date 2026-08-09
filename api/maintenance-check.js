@@ -56,7 +56,8 @@ export default async function handler(request) {
       const { data, error } = await supabase
         .from('site_settings')
         .select('maintenance_mode, maintenance_message')
-        .single()
+        .limit(1)
+        .maybeSingle()
 
       console.log('Supabase response:', { error, data })
 
