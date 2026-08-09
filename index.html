@@ -7,6 +7,41 @@
     <meta name="theme-color" content="#0a2463" />
     <meta name="description" content="Official SBO Web Portal for Good Samaritan Colleges — officials, promises, budget, updates, reports, news, and voting in one transparent hub." />
     <title>GSC Student Council | SBO Web Portal</title>
+    <script>
+      // Check maintenance mode before React app loads
+      (function() {
+        const SUPABASE_URL = 'https://mbpddyszpdpsfjlokvrt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1icGRkeXN6cGRwc2ZqbG9rdnJ0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU1MTEzNTMsImV4cCI6MjEwMTA4NzM1M30.v3qZg2ztEpVkFDjKCew6Z1QAxfb60W6DzkL29ghtngw';
+        
+        // Don't redirect if on admin routes or maintenance page
+        const pathname = window.location.pathname;
+        if (pathname.startsWith('/admin') || pathname === '/under-maintenance.html') {
+          return;
+        }
+
+        // Fetch maintenance status from Supabase
+        fetch(`${SUPABASE_URL}/rest/v1/site_settings?id=eq.site_config&select=maintenance_mode,maintenance_message`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data && data.length > 0 && data[0].maintenance_mode) {
+            const maintenanceUrl = new URL('/under-maintenance.html', window.location.origin);
+            if (data[0].maintenance_message) {
+              maintenanceUrl.searchParams.set('message', encodeURIComponent(data[0].maintenance_message));
+            }
+            window.location.href = maintenanceUrl.toString();
+          }
+        })
+        .catch(err => {
+          console.error('Error checking maintenance mode:', err);
+          // If fetch fails, continue to normal app
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
