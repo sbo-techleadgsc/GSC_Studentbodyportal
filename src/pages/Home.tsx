@@ -127,7 +127,7 @@ export default function Home() {
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">At a Glance</h2>
           <p className="mt-2 text-ink-600">The latest from your student government, updated live.</p>
 
-          <div className="mt-8 grid gap-5 lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 responsive-grid lg:grid-cols-3">
             {/* Latest news */}
             <Card className="p-6 rounded-2xl">
               <div className="flex items-center justify-between">
@@ -226,7 +226,7 @@ export default function Home() {
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">What This Portal Offers</h2>
           <p className="mt-2 max-w-xl text-ink-600">Eight dedicated sections - everything about your student government, in one place.</p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 responsive-grid">
             {FEATURES.map(({ to, icon: Icon, title, desc }) => (
               <Link key={to} to={to}>
                 <Card className="group h-full p-6 transition-transform hover:-translate-y-0.5 rounded-2xl">

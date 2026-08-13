@@ -7,7 +7,6 @@ import { useAdminAuth } from '@/context/AdminAuthContext'
 
 export default function AdminLogin() {
   const { isAdmin, login } = useAdminAuth()
-  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -20,7 +19,7 @@ export default function AdminLogin() {
     setError('')
     setMessage('')
 
-    const ok = await login(email, password, name || 'Admin')
+    const ok = await login(email, password)
     if (!ok) {
       setError('Incorrect email or password. Use a valid Supabase admin account.')
       return
@@ -43,9 +42,6 @@ export default function AdminLogin() {
           <p className="mt-1 text-sm text-ink-600">Manage officers, promises, budget, and more.</p>
 
           <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <Field label="Your Name">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Maria Santos" />
-            </Field>
             <Field label="Admin Email">
               <Input
                 type="email"

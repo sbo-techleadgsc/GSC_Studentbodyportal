@@ -59,11 +59,20 @@ export default function AdminBudget() {
 
 function BudgetForm({ initial, onClose }: { initial: BudgetItem | typeof emptyForm; onClose: () => void }) {
   const [form, setForm] = useState(initial)
+  const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!form.category) return
-    await budgetDb.upsert(form)
-    onClose()
+    setSaving(true)
+    try {
+      await budgetDb.upsert(form)
+      onClose()
+    } catch (error) {
+      console.error('Failed to save budget item:', error)
+      alert('Failed to save budget item. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -84,8 +93,8 @@ function BudgetForm({ initial, onClose }: { initial: BudgetItem | typeof emptyFo
           <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What this fund covers..." />
         </Field>
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={save}>Save</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
         </div>
       </div>
     </Modal>

@@ -67,6 +67,7 @@ export default function AdminPolls() {
 
 function PollForm({ onClose }: { onClose: () => void }) {
   const [form, setForm] = useState(emptyForm)
+  const [saving, setSaving] = useState(false)
 
   function updateOption(i: number, label: string) {
     const options = [...form.options]
@@ -83,8 +84,16 @@ function PollForm({ onClose }: { onClose: () => void }) {
   async function save() {
     const validOptions = form.options.filter((o) => o.label.trim())
     if (!form.question || validOptions.length < 2) return
-    await pollsDb.upsert({ ...form, options: validOptions })
-    onClose()
+    setSaving(true)
+    try {
+      await pollsDb.upsert({ ...form, options: validOptions })
+      onClose()
+    } catch (error) {
+      console.error('Failed to save poll:', error)
+      alert('Failed to save poll. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -122,8 +131,8 @@ function PollForm({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={save}>Create & Publish</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>{saving ? 'Creating...' : 'Create & Publish'}</Button>
         </div>
       </div>
     </Modal>

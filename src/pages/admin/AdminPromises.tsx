@@ -70,12 +70,21 @@ function PromiseForm({
   onClose: () => void
 }) {
   const [form, setForm] = useState(initial)
+  const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!form.title || !form.description) return
-    const officer = officers.find((o) => o.id === form.officerId)
-    await promisesDb.upsert({ ...form, officerName: officer?.name ?? form.officerName })
-    onClose()
+    setSaving(true)
+    try {
+      const officer = officers.find((o) => o.id === form.officerId)
+      await promisesDb.upsert({ ...form, officerName: officer?.name ?? form.officerName })
+      onClose()
+    } catch (error) {
+      console.error('Failed to save promise:', error)
+      alert('Failed to save promise. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -120,8 +129,8 @@ function PromiseForm({
           </Field>
         )}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={save}>Save Promise</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save Promise'}</Button>
         </div>
       </div>
     </Modal>

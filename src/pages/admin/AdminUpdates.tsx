@@ -62,11 +62,20 @@ export default function AdminUpdates() {
 
 function UpdateForm({ initial, onClose }: { initial: UpdateEntry | typeof emptyForm; onClose: () => void }) {
   const [form, setForm] = useState(initial)
+  const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!form.title || !form.description) return
-    await updatesDb.upsert(form)
-    onClose()
+    setSaving(true)
+    try {
+      await updatesDb.upsert(form)
+      onClose()
+    } catch (error) {
+      console.error('Failed to save update:', error)
+      alert('Failed to save update. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -91,8 +100,8 @@ function UpdateForm({ initial, onClose }: { initial: UpdateEntry | typeof emptyF
           <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="What happened, what was decided..." />
         </Field>
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={save}>Publish Update</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>{saving ? 'Publishing...' : 'Publish Update'}</Button>
         </div>
       </div>
     </Modal>

@@ -1,5 +1,5 @@
 import { useState, type FormEvent, useEffect } from 'react'
-import { User as UserIcon, LogOut, CheckCircle2, FileText, Search } from 'lucide-react'
+import { User as UserIcon, LogOut, CheckCircle2, FileText } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { Card, Badge, EmptyState, StatusPill } from '@/components/ui/Primitives'
 import { Field, Input } from '@/components/ui/Form'
@@ -11,8 +11,7 @@ import { supabase } from '@/lib/supabase'
 import type { Report } from '@/lib/types'
 
 export default function Account() {
-  const { isAuthenticated, adminName, signUpPublicUser, requestMagicLink, logout } = useAdminAuth()
-  const [name, setName] = useState('')
+  const { isAuthenticated, adminName, signUpPublicUser, logout } = useAdminAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [authMessage, setAuthMessage] = useState('')
@@ -38,6 +37,14 @@ export default function Account() {
     }
   }, [isAuthenticated])
 
+  function handleLogout() {
+    logout()
+    setAuthMessage('You have been signed out.')
+    setAuthError('')
+    setUserEmail(null)
+    setReports([])
+  }
+
   async function handleAuthSubmit(e: FormEvent) {
     e.preventDefault()
     setAuthError('')
@@ -48,25 +55,16 @@ export default function Account() {
       return
     }
 
-    const ok = await signUpPublicUser(email, password, name || undefined)
+    const ok = await signUpPublicUser(email, password)
     if (!ok) {
       setAuthError('We could not sign you in. Please check your email and password, or try again later.')
       return
     }
 
-    setAuthMessage(`Welcome ${name || email}! You can now vote and submit reports.`)
+    setAuthMessage(`Welcome! You can now vote and submit reports.`)
     // Clear form on success
-    setName('')
     setEmail('')
     setPassword('')
-  }
-
-  function handleLogout() {
-    logout()
-    setAuthMessage('You have been signed out.')
-    setAuthError('')
-    setUserEmail(null)
-    setReports([])
   }
 
   if (isAuthenticated) {
@@ -166,9 +164,6 @@ export default function Account() {
 
         <Card className="mt-8 p-6">
           <form onSubmit={handleAuthSubmit} className="space-y-4">
-            <Field label="Your name (optional)">
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Juan dela Cruz" />
-            </Field>
             <Field label="Your email">
               <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@school.edu" />
             </Field>

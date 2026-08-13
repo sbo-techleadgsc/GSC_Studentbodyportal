@@ -367,7 +367,8 @@ export const officersDb = {
         return data.map(toCamelOfficer).sort((a, b) => a.order - b.order)
       }
     }
-    return []
+    // Fallback to localStorage
+    return read<Officer[]>(KEYS.officers, seedOfficers)
   },
   async upsert(officer: Omit<Officer, 'id'> & { id?: string }): Promise<Officer> {
     const record: Officer = { ...officer, id: officer.id ?? uid() } as Officer
@@ -385,7 +386,17 @@ export const officersDb = {
       }
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<Officer[]>(KEYS.officers, seedOfficers)
+    const index = existing.findIndex((o) => o.id === record.id)
+    if (index >= 0) {
+      existing[index] = record
+    } else {
+      existing.push(record)
+    }
+    write(KEYS.officers, existing)
+    dispatchChange(KEYS.officers)
+    return record
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -395,7 +406,12 @@ export const officersDb = {
         return
       }
     }
-    throw new Error('Supabase is not configured')
+
+    // Fallback to localStorage
+    const existing = read<Officer[]>(KEYS.officers, seedOfficers)
+    const filtered = existing.filter((o) => o.id !== id)
+    write(KEYS.officers, filtered)
+    dispatchChange(KEYS.officers)
   },
 }
 
@@ -410,7 +426,8 @@ export const promisesDb = {
         return promisesData.map((row: any) => toCamelPromise(row, officerNames.get(row.officer_id)))
       }
     }
-    return []
+    // Fallback to localStorage
+    return read<Promise_[]>(KEYS.promises, seedPromises)
   },
   async upsert(item: Omit<Promise_, 'id' | 'updatedAt'> & { id?: string }): Promise<Promise_> {
     const record: Promise_ = { ...item, id: item.id ?? uid(), updatedAt: nowISO() } as Promise_
@@ -428,7 +445,17 @@ export const promisesDb = {
       }
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<Promise_[]>(KEYS.promises, seedPromises)
+    const index = existing.findIndex((p) => p.id === record.id)
+    if (index >= 0) {
+      existing[index] = record
+    } else {
+      existing.push(record)
+    }
+    write(KEYS.promises, existing)
+    dispatchChange(KEYS.promises)
+    return record
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -438,7 +465,12 @@ export const promisesDb = {
         return
       }
     }
-    throw new Error('Supabase is not configured')
+
+    // Fallback to localStorage
+    const existing = read<Promise_[]>(KEYS.promises, seedPromises)
+    const filtered = existing.filter((p) => p.id !== id)
+    write(KEYS.promises, filtered)
+    dispatchChange(KEYS.promises)
   },
 }
 
@@ -451,7 +483,8 @@ export const budgetDb = {
         return data.map(toCamelBudget)
       }
     }
-    return []
+    // Fallback to localStorage
+    return read<BudgetItem[]>(KEYS.budget, seedBudget)
   },
   async upsert(item: Omit<BudgetItem, 'id'> & { id?: string }): Promise<BudgetItem> {
     const record: BudgetItem = { ...item, id: item.id ?? uid() } as BudgetItem
@@ -469,7 +502,17 @@ export const budgetDb = {
       }
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<BudgetItem[]>(KEYS.budget, seedBudget)
+    const index = existing.findIndex((b) => b.id === record.id)
+    if (index >= 0) {
+      existing[index] = record
+    } else {
+      existing.push(record)
+    }
+    write(KEYS.budget, existing)
+    dispatchChange(KEYS.budget)
+    return record
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -479,7 +522,12 @@ export const budgetDb = {
         return
       }
     }
-    throw new Error('Supabase is not configured')
+
+    // Fallback to localStorage
+    const existing = read<BudgetItem[]>(KEYS.budget, seedBudget)
+    const filtered = existing.filter((b) => b.id !== id)
+    write(KEYS.budget, filtered)
+    dispatchChange(KEYS.budget)
   },
 }
 
@@ -492,7 +540,8 @@ export const updatesDb = {
         return data.map(toCamelUpdate).sort((a, b) => (a.date < b.date ? 1 : -1))
       }
     }
-    return []
+    // Fallback to localStorage
+    return read<UpdateEntry[]>(KEYS.updates, seedUpdates)
   },
   async upsert(item: Omit<UpdateEntry, 'id'> & { id?: string }): Promise<UpdateEntry> {
     const record: UpdateEntry = { ...item, id: item.id ?? uid() } as UpdateEntry
@@ -510,7 +559,17 @@ export const updatesDb = {
       }
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<UpdateEntry[]>(KEYS.updates, seedUpdates)
+    const index = existing.findIndex((u) => u.id === record.id)
+    if (index >= 0) {
+      existing[index] = record
+    } else {
+      existing.push(record)
+    }
+    write(KEYS.updates, existing)
+    dispatchChange(KEYS.updates)
+    return record
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -520,7 +579,12 @@ export const updatesDb = {
         return
       }
     }
-    throw new Error('Supabase is not configured')
+
+    // Fallback to localStorage
+    const existing = read<UpdateEntry[]>(KEYS.updates, seedUpdates)
+    const filtered = existing.filter((u) => u.id !== id)
+    write(KEYS.updates, filtered)
+    dispatchChange(KEYS.updates)
   },
 }
 
@@ -539,7 +603,8 @@ export const reportsDb = {
         return data.map(toCamelReport).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
       }
     }
-    return []
+    // Fallback to localStorage
+    return read<Report[]>(KEYS.reports, seedReports)
   },
   async submit(input: {
     visibility: 'public' | 'anonymous'
@@ -577,7 +642,12 @@ export const reportsDb = {
       return toCamelReport(data)
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<Report[]>(KEYS.reports, seedReports)
+    existing.push(record)
+    write(KEYS.reports, existing)
+    dispatchChange(KEYS.reports)
+    return record
   },
   async updateStatus(id: string, status: Report['status'], adminNotes?: string): Promise<void> {
     if (supabase) {
@@ -590,7 +660,15 @@ export const reportsDb = {
       return
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<Report[]>(KEYS.reports, seedReports)
+    const index = existing.findIndex((r) => r.id === id)
+    if (index >= 0) {
+      existing[index].status = status
+      existing[index].adminNotes = adminNotes
+      write(KEYS.reports, existing)
+      dispatchChange(KEYS.reports)
+    }
   },
   async findByTrackingCode(code: string): Promise<Report | undefined> {
     if (supabase) {
@@ -604,7 +682,9 @@ export const reportsDb = {
       }
       return undefined
     }
-    return undefined
+    // Fallback to localStorage
+    const existing = read<Report[]>(KEYS.reports, seedReports)
+    return existing.find((r) => r.trackingCode === code.trim())
   },
   async findByEmail(email: string): Promise<Report[]> {
     if (supabase) {
@@ -618,7 +698,9 @@ export const reportsDb = {
       }
       return []
     }
-    return []
+    // Fallback to localStorage
+    const existing = read<Report[]>(KEYS.reports, seedReports)
+    return existing.filter((r) => r.email === email.trim().toLowerCase()).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -630,7 +712,12 @@ export const reportsDb = {
       dispatchChange(KEYS.reports)
       return
     }
-    throw new Error('Supabase is not configured')
+
+    // Fallback to localStorage
+    const existing = read<Report[]>(KEYS.reports, seedReports)
+    const filtered = existing.filter((r) => r.id !== id)
+    write(KEYS.reports, filtered)
+    dispatchChange(KEYS.reports)
   },
 }
 
@@ -643,7 +730,8 @@ export const newsDb = {
         return data.map(toCamelNews).sort((a, b) => (a.date < b.date ? 1 : -1))
       }
     }
-    return []
+    // Fallback to localStorage
+    return read<NewsPost[]>(KEYS.news, seedNews)
   },
   async upsert(item: Omit<NewsPost, 'id'> & { id?: string }): Promise<NewsPost> {
     const record: NewsPost = { ...item, id: item.id ?? uid() } as NewsPost
@@ -661,7 +749,17 @@ export const newsDb = {
       }
     }
 
-    throw new Error('Supabase is not configured')
+    // Fallback to localStorage
+    const existing = read<NewsPost[]>(KEYS.news, seedNews)
+    const index = existing.findIndex((n) => n.id === record.id)
+    if (index >= 0) {
+      existing[index] = record
+    } else {
+      existing.push(record)
+    }
+    write(KEYS.news, existing)
+    dispatchChange(KEYS.news)
+    return record
   },
   async remove(id: string): Promise<void> {
     if (supabase) {
@@ -671,7 +769,12 @@ export const newsDb = {
         return
       }
     }
-    throw new Error('Supabase is not configured')
+
+    // Fallback to localStorage
+    const existing = read<NewsPost[]>(KEYS.news, seedNews)
+    const filtered = existing.filter((n) => n.id !== id)
+    write(KEYS.news, filtered)
+    dispatchChange(KEYS.news)
   },
 }
 
@@ -824,7 +927,10 @@ export const pollsDb = {
         }
       }
     }
-    return []
+    // Fallback to localStorage
+    const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    const polls = read<Poll[]>(KEYS.polls, seedPolls)
+    return polls.map(p => ({ ...p, isOpen: isLocalhost ? true : p.isOpen }))
   },
   async upsert(item: Omit<Poll, 'id' | 'options'> & { id?: string; options: (Omit<PollOption, 'id' | 'votes'> & { id?: string; votes?: number })[] }): Promise<Poll> {
     const record: Poll = {
@@ -939,7 +1045,12 @@ export const pollsDb = {
         return
       }
     }
-    write(KEYS.polls, read(KEYS.polls, seedPolls).filter((p) => p.id !== id))
+
+    // Fallback to localStorage
+    const all = read(KEYS.polls, seedPolls)
+    const filtered = all.filter((p) => p.id !== id)
+    write(KEYS.polls, filtered)
+    dispatchChange(KEYS.polls)
   },
   getMyVote(pollId: string): string | undefined {
     const voted = read<Record<string, string>>(KEYS.votedPolls, {})

@@ -61,7 +61,7 @@ export default function Reports() {
       />
 
       <div className="mx-auto max-w-3xl px-6 py-10">
-        <div className="grid gap-8 lg:grid-cols-[1fr_260px] lg:items-start">
+        <div className="grid gap-8 lg:grid-cols-[1fr_260px] lg:items-start responsive-grid">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Student Report Form</h2>
             <p className="mt-1.5 text-ink-600">Submit concerns, feedback, or grievances confidentially.</p>

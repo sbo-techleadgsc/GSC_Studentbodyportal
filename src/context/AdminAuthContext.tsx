@@ -13,9 +13,9 @@ interface AdminAuthValue {
   isAdmin: boolean
   isAuthenticated: boolean
   adminName: string | null
-  login: (email: string, password: string, name?: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<boolean>
   requestMagicLink: (email: string) => Promise<boolean>
-  signUpPublicUser: (email: string, password: string, name?: string) => Promise<boolean>
+  signUpPublicUser: (email: string, password: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -52,7 +52,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
 
     setIsAdmin(Boolean(adminRow))
-    setAdminName(adminRow?.name || session.user.user_metadata?.full_name || session.user.email || null)
+    setAdminName(adminRow?.name || session.user.email?.split('@')[0] || session.user.email || null)
   }
 
   useEffect(() => {
@@ -109,12 +109,11 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // but it will NEVER be an admin unless you add them to the admins
   // table yourself. isAdmin is derived fresh by applySession(), not
   // set here.
-  const signUpPublicUser = async (email: string, password: string, name?: string) => {
+  const signUpPublicUser = async (email: string, password: string) => {
     if (!supabase) return false
     const { error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: password.trim(),
-      options: { data: { full_name: name || email } },
     })
     if (error) {
       console.error('[signUpPublicUser] Error:', error.message)

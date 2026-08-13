@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { Card, Button } from '@/components/ui/Primitives'
 import { Field, Input, Textarea } from '@/components/ui/Form'
 import { Modal } from '@/components/ui/Modal'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { useLiveData } from '@/lib/hooks'
 import { officersDb } from '@/lib/store'
 import type { Officer } from '@/lib/types'
@@ -26,7 +27,7 @@ export default function AdminOfficers() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 responsive-grid">
         {officers?.map((o) => (
           <Card key={o.id} className="p-5">
             <div className="flex items-center gap-3">
@@ -55,11 +56,20 @@ export default function AdminOfficers() {
 
 function OfficerForm({ initial, onClose }: { initial: Officer | typeof emptyForm; onClose: () => void }) {
   const [form, setForm] = useState(initial)
+  const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!form.name || !form.position) return
-    await officersDb.upsert({ ...form, photoUrl: form.photoUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(form.name)}` })
-    onClose()
+    setSaving(true)
+    try {
+      await officersDb.upsert({ ...form, photoUrl: form.photoUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(form.name)}` })
+      onClose()
+    } catch (error) {
+      console.error('Failed to save officer:', error)
+      alert('Failed to save officer. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -82,15 +92,18 @@ function OfficerForm({ initial, onClose }: { initial: Officer | typeof emptyForm
         <Field label="Email">
           <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="name@gsc.edu.ph" />
         </Field>
-        <Field label="Photo URL" hint="Paste a link to their photo. (File uploads connect via Supabase Storage - see README.)">
-          <Input value={form.photoUrl} onChange={(e) => setForm({ ...form, photoUrl: e.target.value })} placeholder="https://..." />
-        </Field>
+        <ImageUpload
+          value={form.photoUrl || ''}
+          onChange={(url) => setForm({ ...form, photoUrl: url })}
+          label="Photo"
+          folder="officers"
+        />
         <Field label="Short Bio (optional)">
           <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="A sentence or two about them..." />
         </Field>
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={save}>Save Officer</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>{saving ? 'Saving...' : 'Save Officer'}</Button>
         </div>
       </div>
     </Modal>

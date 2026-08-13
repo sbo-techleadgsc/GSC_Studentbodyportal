@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { Card, Button, Badge } from '@/components/ui/Primitives'
 import { Field, Input, Textarea, Select } from '@/components/ui/Form'
 import { Modal } from '@/components/ui/Modal'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { useLiveData } from '@/lib/hooks'
 import { newsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
@@ -61,11 +62,20 @@ export default function AdminNews() {
 
 function NewsForm({ initial, onClose }: { initial: NewsPost | typeof emptyForm; onClose: () => void }) {
   const [form, setForm] = useState(initial)
+  const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!form.title || !form.content) return
-    await newsDb.upsert(form)
-    onClose()
+    setSaving(true)
+    try {
+      await newsDb.upsert(form)
+      onClose()
+    } catch (error) {
+      console.error('Failed to save news:', error)
+      alert('Failed to save news. Please try again.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -89,12 +99,15 @@ function NewsForm({ initial, onClose }: { initial: NewsPost | typeof emptyForm; 
         <Field label="Content">
           <Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Write the announcement..." />
         </Field>
-        <Field label="Image URL (optional)" hint="Paste a link, or connect Supabase Storage for drag-and-drop uploads later.">
-          <Input value={form.imageUrl} onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} placeholder="https://..." />
-        </Field>
+        <ImageUpload
+          value={form.imageUrl || ''}
+          onChange={(url) => setForm({ ...form, imageUrl: url })}
+          label="Image (optional)"
+          folder="news"
+        />
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button className="flex-1" onClick={save}>Publish News</Button>
+          <Button variant="outline" className="flex-1" onClick={onClose} disabled={saving}>Cancel</Button>
+          <Button className="flex-1" onClick={save} disabled={saving}>{saving ? 'Publishing...' : 'Publish News'}</Button>
         </div>
       </div>
     </Modal>

@@ -21,7 +21,7 @@ export function PublicLayout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-surface safe-bottom">
       <TopNav />
       <main className="pb-20 md:pb-16">{children}</main>
       <BottomNav />
