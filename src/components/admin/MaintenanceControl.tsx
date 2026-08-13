@@ -44,7 +44,7 @@ export function MaintenanceControl() {
     : '/under-maintenance.html'
 
   return (
-    <Card className={`p-6 ${settings?.maintenanceMode ? 'border border-gold-400/40 bg-gold-50/50 !shadow-none' : ''}`}>
+    <Card className={`p-6 ${settings?.maintenanceMode ? 'border border-gold-400 bg-gold-50' : ''}`}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-navy-100 text-navy-900">
@@ -73,7 +73,7 @@ export function MaintenanceControl() {
             onClick={toggle}
             className={clsx(
               'relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50',
-              settings?.maintenanceMode ? 'bg-gold-500' : 'bg-ink-300'
+              settings?.maintenanceMode ? 'bg-gold-500' : 'bg-navy-100'
             )}
           >
             <span
