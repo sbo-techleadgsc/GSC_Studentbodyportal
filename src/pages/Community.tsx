@@ -837,7 +837,11 @@ export default function Community() {
 
                       {meta.songTitle && (
                         <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                          <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${meta.songArtwork || 'from-amber-400 to-rose-400'}`} />
+                          {meta.songArtwork ? (
+                            <img src={meta.songArtwork} alt={meta.songTitle || 'Album artwork'} className="h-12 w-12 rounded-xl object-cover" />
+                          ) : (
+                            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-rose-400" />
+                          )}
                           <div>
                             <p className="text-sm font-semibold text-slate-800">{meta.songTitle}</p>
                             <p className="text-xs text-slate-500">{meta.songArtist}</p>

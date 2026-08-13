@@ -1,5 +1,5 @@
 function buildStableAudioUrl(track) {
-  return '/audio/preview-loop.wav'
+  return track.preview || '/audio/preview-loop.wav'
 }
 
 export async function searchSpotifyTracks(query, env = process.env) {
