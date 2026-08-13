@@ -835,92 +835,27 @@ export default function Community() {
 
                       <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-slate-700">{msg.message}</p>
 
-                      {meta.songTitle && (
+                      {meta.songTitle && spotifyUrl ? (
                         <div className="mt-3 flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                          {meta.songArtwork ? (
-                            <img src={meta.songArtwork} alt={meta.songTitle || 'Album artwork'} className="h-12 w-12 rounded-xl object-cover" />
-                          ) : (
-                            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-rose-400" />
-                          )}
+                          <div className="relative h-12 w-12">
+                            {meta.songArtwork ? (
+                              <img src={meta.songArtwork} alt={meta.songTitle || 'Album artwork'} className="h-12 w-12 rounded-xl object-cover" />
+                            ) : (
+                              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-rose-400" />
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => void togglePreview(spotifyUrl, meta.songTitle || '', meta.songArtist || '')}
+                              className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/0 opacity-0 transition hover:bg-black/30 hover:opacity-100"
+                              aria-label={isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Pause preview' : 'Play preview'}
+                            >
+                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? <Pause className="h-4 w-4 text-white drop-shadow" /> : <Play className="h-4 w-4 text-white drop-shadow" />}
+                            </button>
+                          </div>
                           <div>
                             <p className="text-sm font-semibold text-slate-800">{meta.songTitle}</p>
                             <p className="text-xs text-slate-500">{meta.songArtist}</p>
                           </div>
-                        </div>
-                      )}
-
-                      {spotifyUrl ? (
-                        <div className="mt-3 overflow-hidden rounded-[24px] border border-emerald-600/20 bg-gradient-to-br from-emerald-950 via-emerald-900 to-emerald-800 p-3 text-white shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
-                          <div className="flex items-center gap-3">
-                            {meta.songArtwork ? (
-                              <img src={meta.songArtwork} alt={meta.songTitle || 'Album artwork'} className="h-14 w-14 rounded-xl object-cover shadow-md" />
-                            ) : (
-                              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/15 text-white/80">
-                                <Music4 className="h-6 w-6" />
-                              </div>
-                            )}
-
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-semibold">{meta.songTitle || 'Untitled track'}</p>
-                              <p className="truncate text-xs text-emerald-100/80">{meta.songArtist || 'Unknown artist'}</p>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => void togglePreview(spotifyUrl, meta.songTitle || '', meta.songArtist || '')}
-                              className="relative flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-                              aria-label={isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Pause preview' : 'Play preview'}
-                            >
-                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                              {isPreviewPlaying && activePreviewUrl === spotifyUrl ? (
-                                <span className="absolute inset-0 rounded-full border-2 border-emerald-300/60 animate-ping" />
-                              ) : null}
-                            </button>
-                          </div>
-
-                          <div className="mt-3 rounded-[18px] border border-white/10 bg-black/10 p-3">
-                            <div className="flex items-center justify-between gap-3">
-                              <div className="flex min-w-0 items-center gap-2">
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15">
-                                  <Music4 className="h-4 w-4" />
-                                </div>
-                                <div className="min-w-0">
-                                  <p className="text-[10px] uppercase tracking-[0.24em] text-emerald-100/70">Now playing</p>
-                                  <p className="truncate text-sm font-semibold text-white">{meta.songTitle || 'Untitled track'}</p>
-                                </div>
-                              </div>
-                              <span className="text-[10px] uppercase tracking-[0.24em] text-emerald-100/70">
-                                {isPreviewPlaying && activePreviewUrl === spotifyUrl ? 'Live' : 'Preview'}
-                              </span>
-                            </div>
-
-                            {activePreviewUrl === spotifyUrl ? (
-                              <div className="mt-3 rounded-2xl border border-white/10 bg-white/10 px-3 py-2">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-100/70">Live lyrics</p>
-                                  <span className="text-[10px] text-emerald-100/70">
-                                    {lyricsStatus === 'loading' ? 'Loading…' : lyricsStatus === 'ready' ? 'Synced' : 'Preview'}
-                                  </span>
-                                </div>
-
-                                <div className="mt-2 min-h-[40px]">
-                                  {lyricsStatus === 'loading' ? (
-                                    <p className="text-sm text-emerald-50/90">Finding lyrics for this track…</p>
-                                  ) : null}
-                                  {lyricsStatus === 'error' ? (
-                                    <p className="text-sm text-amber-100">{lyricsNotice}</p>
-                                  ) : null}
-                                  {lyricsStatus === 'ready' && lyricsLines.length > 0 ? (
-                                    <p className="text-sm font-semibold text-white">{lyricsLines[activeLyricIndex] || lyricsLines[0]}</p>
-                                  ) : null}
-                                </div>
-                              </div>
-                            ) : null}
-                          </div>
-
-                          {previewError && activePreviewUrl === spotifyUrl ? (
-                            <p className="mt-2 text-[11px] text-amber-200">{previewError}</p>
-                          ) : null}
                         </div>
                       ) : null}
                     </div>
