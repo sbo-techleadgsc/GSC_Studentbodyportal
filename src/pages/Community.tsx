@@ -137,30 +137,6 @@ function getSpotifyAudioUrl(value: string): string | null {
   return null
 }
 
-function buildLyricsUrl(title: string, artist: string): string | null {
-  const cleanTitle = title?.trim()
-  const cleanArtist = artist?.trim()
-
-  if (!cleanTitle || !cleanArtist) return null
-
-  return `https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`
-}
-
-function parseLyrics(text: string): string[] {
-  return text
-    .split(/\r?\n/)
-    .map((line) => line.replace(/\[.*?\]/g, '').trim())
-    .filter((line) => line.length > 0)
-}
-
-function getLyricIndexForTime(currentTime: number, lyrics: string[], duration: number): number {
-  if (lyrics.length === 0) return 0
-
-  const safeDuration = Number.isFinite(duration) && duration > 0 ? duration : 30
-  const step = Math.max(2.2, safeDuration / Math.max(lyrics.length, 1))
-  return Math.min(lyrics.length - 1, Math.max(0, Math.floor(currentTime / step)))
-}
-
 function buildDisplayName(value: string): string {
   return value.trim()
 }
@@ -188,10 +164,6 @@ export default function Community() {
   const [activePlayback, setActivePlayback] = useState<{ url: string; title: string; artist: string } | null>(null)
   const [isPreviewPlaying, setIsPreviewPlaying] = useState(false)
   const [previewError, setPreviewError] = useState('')
-  const [lyricsLines, setLyricsLines] = useState<string[]>([])
-  const [lyricsStatus, setLyricsStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
-  const [lyricsNotice, setLyricsNotice] = useState('')
-  const [activeLyricIndex, setActiveLyricIndex] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   useEffect(() => {
@@ -451,64 +423,6 @@ export default function Community() {
     return ROTATIONS[Math.floor(Math.random() * ROTATIONS.length)]
   }
 
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio || lyricsLines.length === 0 || !activePlayback?.url) return
-
-    const syncLyrics = () => {
-      const nextIndex = getLyricIndexForTime(audio.currentTime, lyricsLines, audio.duration)
-      setActiveLyricIndex((current) => (current === nextIndex ? current : nextIndex))
-    }
-
-    syncLyrics()
-    audio.addEventListener('timeupdate', syncLyrics)
-    audio.addEventListener('play', syncLyrics)
-    audio.addEventListener('seeked', syncLyrics)
-
-    return () => {
-      audio.removeEventListener('timeupdate', syncLyrics)
-      audio.removeEventListener('play', syncLyrics)
-      audio.removeEventListener('seeked', syncLyrics)
-    }
-  }, [activePlayback?.url, lyricsLines])
-
-  async function loadLyrics(title: string, artist: string) {
-    const lyricsUrl = buildLyricsUrl(title, artist)
-
-    if (!lyricsUrl) {
-      setLyricsLines([])
-      setLyricsStatus('error')
-      setLyricsNotice('Lyrics unavailable for this track.')
-      setActiveLyricIndex(0)
-      return
-    }
-
-    setLyricsStatus('loading')
-    setLyricsNotice('')
-    setLyricsLines([])
-    setActiveLyricIndex(0)
-
-    try {
-      const response = await fetch(lyricsUrl)
-      if (!response.ok) throw new Error('Unable to load lyrics')
-
-      const payload = await response.json()
-      const lines = parseLyrics(payload?.lyrics ?? '')
-
-      if (lines.length === 0) {
-        setLyricsStatus('error')
-        setLyricsNotice('No lyrics available for this track yet.')
-        return
-      }
-
-      setLyricsLines(lines)
-      setLyricsStatus('ready')
-    } catch {
-      setLyricsStatus('error')
-      setLyricsNotice('Lyrics are not available for this track right now.')
-    }
-  }
-
   async function togglePreview(url: string, title?: string, artist?: string) {
     if (!url) return
 
@@ -525,34 +439,15 @@ export default function Community() {
 
     const playbackMeta = { url, title: title ?? '', artist: artist ?? '' }
     setActivePlayback(playbackMeta)
-    setActiveLyricIndex(0)
     setPreviewError('')
-
-    if (title || artist) {
-      void loadLyrics(title ?? '', artist ?? '')
-    } else {
-      setLyricsLines([])
-      setLyricsStatus('idle')
-      setLyricsNotice('')
-    }
-
-    const startFromBeginning = () => {
-      audio.currentTime = 0
-      setActiveLyricIndex(0)
-      audio.removeEventListener('loadedmetadata', startFromBeginning)
-      audio.removeEventListener('canplay', startFromBeginning)
-    }
 
     audio.pause()
     audio.src = url
     audio.load()
     audio.currentTime = 0
-    audio.addEventListener('loadedmetadata', startFromBeginning, { once: true })
-    audio.addEventListener('canplay', startFromBeginning, { once: true })
 
     try {
       await audio.play()
-      audio.currentTime = 0
       setActivePreviewUrl(url)
       setIsPreviewPlaying(true)
       setPreviewError('')
