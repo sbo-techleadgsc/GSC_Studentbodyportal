@@ -68,7 +68,8 @@ function NewsForm({ initial, onClose }: { initial: NewsPost | typeof emptyForm; 
     if (!form.title || !form.content) return
     setSaving(true)
     try {
-      await newsDb.upsert(form)
+      const itemToSave = 'id' in form ? form : { ...form, id: crypto.randomUUID() }
+      await newsDb.upsert(itemToSave)
       onClose()
     } catch (error) {
       console.error('Failed to save news:', error)

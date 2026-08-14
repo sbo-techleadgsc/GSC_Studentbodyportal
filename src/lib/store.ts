@@ -551,6 +551,72 @@ export const reportsDb = {
 
     dispatchChange(KEYS.reports)
   },
+
+  async findByEmail(email: string): Promise<Report[]> {
+    if (!supabase) {
+      return []
+    }
+
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('email', email)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('[reportsDb] Error finding reports by email:', error)
+      return []
+    }
+
+    return (data ?? []).map(toCamelReport)
+  },
+
+  async findByTrackingCode(code: string): Promise<Report | null> {
+    if (!supabase) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('tracking_code', code)
+      .single()
+
+    if (error) {
+      console.error('[reportsDb] Error finding report by tracking code:', error)
+      return null
+    }
+
+    return data ? toCamelReport(data) : null
+  },
+
+  async submit(data: Omit<Report, 'id' | 'trackingCode' | 'status' | 'createdAt'>): Promise<Report> {
+    const newItem: Report = {
+      ...data,
+      id: uid(),
+      trackingCode: `REPORT-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
+      status: 'new',
+      createdAt: new Date().toISOString(),
+    }
+    return this.upsert(newItem)
+  },
+
+  async updateStatus(id: string, status: Report['status'], adminNotes?: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase
+      .from('reports')
+      .update({ status, admin_notes: adminNotes })
+      .eq('id', id)
+
+    if (error) {
+      throw new Error(`Failed to update report status: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.reports)
+  },
 }
 
 // ── News ────────────────────────────────────────────────────
@@ -705,6 +771,29 @@ export const freedomWallDb = {
     }
 
     dispatchChange(KEYS.freedomWall)
+  },
+
+  async submit(data: Omit<FreedomMessage, 'id' | 'createdAt' | 'likes'> & { meta?: Record<string, unknown> }): Promise<FreedomMessage> {
+    await ensureGuestSession()
+    
+    const newItem: FreedomMessage = {
+      id: uid(),
+      message: data.message,
+      color: data.color,
+      createdAt: new Date().toISOString(),
+      likes: 0,
+      isDeleted: false,
+      nickname: data.meta?.nickname as string | undefined,
+      senderName: data.meta?.senderName as string | undefined,
+      recipientName: data.meta?.recipientName as string | undefined,
+      spotifyUrl: data.meta?.spotifyUrl as string | undefined,
+      spotifyQuery: data.meta?.spotifyQuery as string | undefined,
+      songTitle: data.meta?.songTitle as string | undefined,
+      songArtist: data.meta?.songArtist as string | undefined,
+      songArtwork: data.meta?.songArtwork as string | undefined,
+    }
+    
+    return this.upsert(newItem)
   },
 }
 

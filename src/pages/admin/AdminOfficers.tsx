@@ -62,7 +62,8 @@ function OfficerForm({ initial, onClose }: { initial: Officer | typeof emptyForm
     if (!form.name || !form.position) return
     setSaving(true)
     try {
-      await officersDb.upsert({ ...form, photoUrl: form.photoUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(form.name)}` })
+      const itemToSave = 'id' in form ? form : { ...form, id: crypto.randomUUID() }
+      await officersDb.upsert({ ...itemToSave, photoUrl: itemToSave.photoUrl || `https://api.dicebear.com/9.x/notionists/svg?seed=${encodeURIComponent(itemToSave.name)}` })
       onClose()
     } catch (error) {
       console.error('Failed to save officer:', error)
