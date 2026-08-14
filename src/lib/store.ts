@@ -179,11 +179,21 @@ function toCamelReport(row: any): Report {
     visibility: row.visibility,
     fullName: row.full_name ?? row.fullName,
     email: row.email,
+    studentId: row.student_id ?? row.studentId,
+    section: row.section,
+    contactMethod: row.contact_method ?? row.contactMethod,
+    contactValue: row.contact_value ?? row.contactValue,
     category: row.category,
     content: row.content,
     status: row.status,
     adminNotes: row.admin_notes ?? row.adminNotes,
+    adminReply: row.admin_reply ?? row.adminReply,
+    isAnonymous: row.is_anonymous ?? row.isAnonymous ?? false,
+    disclaimerAccepted: row.disclaimer_accepted ?? row.disclaimerAccepted ?? false,
+    isApproved: row.is_approved ?? row.isApproved ?? false,
+    isShadowbanned: row.is_shadowbanned ?? row.isShadowbanned ?? false,
     createdAt: row.created_at ?? row.createdAt,
+    updatedAt: row.updated_at ?? row.updatedAt,
   }
 }
 
@@ -194,11 +204,21 @@ function toSnakeReport(row: Report): Record<string, unknown> {
     visibility: row.visibility,
     full_name: row.fullName,
     email: row.email,
+    student_id: row.studentId,
+    section: row.section,
+    contact_method: row.contactMethod,
+    contact_value: row.contactValue,
     category: row.category,
     content: row.content,
     status: row.status,
     admin_notes: row.adminNotes,
+    admin_reply: row.adminReply,
+    is_anonymous: row.isAnonymous,
+    disclaimer_accepted: row.disclaimerAccepted,
+    is_approved: row.isApproved,
+    is_shadowbanned: row.isShadowbanned,
     created_at: row.createdAt,
+    updated_at: row.updatedAt,
   }
 }
 
@@ -590,13 +610,16 @@ export const reportsDb = {
     return data ? toCamelReport(data) : null
   },
 
-  async submit(data: Omit<Report, 'id' | 'trackingCode' | 'status' | 'createdAt'>): Promise<Report> {
+  async submit(data: Omit<Report, 'id' | 'trackingCode' | 'status' | 'createdAt' | 'isApproved' | 'isShadowbanned'>): Promise<Report> {
     const newItem: Report = {
       ...data,
       id: uid(),
-      trackingCode: `REPORT-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
-      status: 'new',
+      trackingCode: `SBO-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+      status: 'pending',
+      isApproved: false,
+      isShadowbanned: false,
       createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     }
     return this.upsert(newItem)
   },
@@ -608,7 +631,7 @@ export const reportsDb = {
 
     const { error } = await supabase
       .from('reports')
-      .update({ status, admin_notes: adminNotes })
+      .update({ status, admin_notes: adminNotes, updated_at: new Date().toISOString() })
       .eq('id', id)
 
     if (error) {
@@ -616,6 +639,68 @@ export const reportsDb = {
     }
 
     dispatchChange(KEYS.reports)
+  },
+
+  async approve(id: string, adminReply?: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase
+      .from('reports')
+      .update({ 
+        is_approved: true, 
+        status: 'under-review',
+        admin_reply: adminReply,
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', id)
+
+    if (error) {
+      throw new Error(`Failed to approve report: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.reports)
+  },
+
+  async shadowban(id: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase
+      .from('reports')
+      .update({ 
+        is_shadowbanned: true,
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', id)
+
+    if (error) {
+      throw new Error(`Failed to shadowban report: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.reports)
+  },
+
+  async findByTrackingCodeAndStudentId(code: string, studentId: string): Promise<Report | null> {
+    if (!supabase) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('tracking_code', code)
+      .eq('student_id', studentId)
+      .single()
+
+    if (error) {
+      console.error('[reportsDb] Error finding report by tracking code and student ID:', error)
+      return null
+    }
+
+    return data ? toCamelReport(data) : null
   },
 }
 

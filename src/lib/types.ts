@@ -8,8 +8,19 @@
 // ─────────────────────────────────────────────────────────────
 
 export type PromiseStatus = 'pending' | 'in-progress' | 'completed'
-export type ReportStatus = 'new' | 'in-review' | 'resolved'
+export type ReportStatus = 'pending' | 'under-review' | 'resolved' | 'rejected'
 export type ReportVisibility = 'public' | 'anonymous'
+export type ContactMethod = 'email' | 'messenger' | 'sms'
+export type ReportCategory = 
+  | 'direct-inquiry'
+  | 'lost-found'
+  | 'individual-complaint'
+  | 'administrative-followup'
+  | 'broken-facilities'
+  | 'event-feedback'
+  | 'campus-whistleblowing'
+  | 'mental-health'
+  | 'other'
 export type UpdateCategory =
   | 'General Assembly'
   | 'Exec Board'
@@ -65,11 +76,21 @@ export interface Report {
   visibility: ReportVisibility
   fullName?: string
   email?: string
-  category: string
+  studentId?: string
+  section?: string
+  contactMethod?: ContactMethod
+  contactValue?: string
+  category: ReportCategory
   content: string
   status: ReportStatus
   adminNotes?: string
+  adminReply?: string
+  isAnonymous: boolean
+  disclaimerAccepted: boolean
+  isApproved: boolean
+  isShadowbanned: boolean
   createdAt: string
+  updatedAt?: string
 }
 
 export interface NewsPost {

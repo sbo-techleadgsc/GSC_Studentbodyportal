@@ -1,16 +1,37 @@
 import { useState, type FormEvent } from 'react'
-import { Eye, Lock, Search, CheckCircle2 } from 'lucide-react'
+import { Eye, Lock, Search, CheckCircle2, AlertTriangle, User, Phone, MessageSquare, Mail } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Card, Button, StatusPill } from '@/components/ui/Primitives'
 import { Field, Input, Textarea, Select } from '@/components/ui/Form'
+import { CrisisModal } from '@/components/ui/CrisisModal'
 import { useLiveData } from '@/lib/hooks'
 import { reportsDb, pollsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
 import { clsx } from '@/lib/clsx'
-import type { Report } from '@/lib/types'
+import { shouldTriggerCrisisInterceptor } from '@/lib/crisisDetection'
+import type { Report, ReportCategory, ContactMethod } from '@/lib/types'
 
-const CATEGORIES = ['Facilities', 'Academic Support', 'Safety', 'Finance/Fees', 'Bullying/Conduct', 'Other']
+const PUBLIC_CATEGORIES: ReportCategory[] = ['direct-inquiry', 'lost-found', 'individual-complaint', 'administrative-followup', 'other']
+const ANONYMOUS_CATEGORIES: ReportCategory[] = ['broken-facilities', 'event-feedback', 'campus-whistleblowing', 'other']
+
+const CATEGORY_LABELS: Record<ReportCategory, string> = {
+  'direct-inquiry': 'Direct Inquiry',
+  'lost-found': 'Lost & Found',
+  'individual-complaint': 'Individual Complaint',
+  'administrative-followup': 'Administrative Follow-up',
+  'broken-facilities': 'Broken Facilities',
+  'event-feedback': 'Event Feedback/Suggestions',
+  'campus-whistleblowing': 'Campus Whistleblowing',
+  'mental-health': 'Mental Health / Peer Distress',
+  'other': 'Other',
+}
+
+const CONTACT_METHOD_LABELS: Record<ContactMethod, string> = {
+  email: 'Personal Email (Gmail/Yahoo)',
+  messenger: 'FB Messenger Link/Handle',
+  sms: 'Mobile/SMS Number',
+}
 
 export default function Reports() {
   const [polls] = useLiveData(pollsDb.list)
@@ -18,39 +39,107 @@ export default function Reports() {
 
   const [visibility, setVisibility] = useState<'public' | 'anonymous'>('public')
   const [fullName, setFullName] = useState('')
-  const [email, setEmail] = useState('')
-  const [category, setCategory] = useState('')
+  const [studentId, setStudentId] = useState('')
+  const [section, setSection] = useState('')
+  const [contactMethod, setContactMethod] = useState<ContactMethod>('email')
+  const [contactValue, setContactValue] = useState('')
+  const [category, setCategory] = useState<ReportCategory>('')
   const [content, setContent] = useState('')
+  const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
   const [submitted, setSubmitted] = useState<Report | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
+  const [showCrisisModal, setShowCrisisModal] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
+
+  const availableCategories = visibility === 'public' ? PUBLIC_CATEGORIES : ANONYMOUS_CATEGORIES
+
+  // Student ID validation regex: XX-XXXX-X format
+  const studentIdRegex = /^[A-Z]{2}-\d{4}-[A-Z0-9]$/
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
-    if (!category || !content.trim()) return
+    setValidationError(null)
+    setSubmitError(null)
+
+    // Crisis detection
+    if (shouldTriggerCrisisInterceptor(content, category)) {
+      setShowCrisisModal(true)
+      return
+    }
+
+    // Validation for public reports
+    if (visibility === 'public') {
+      if (!fullName.trim()) {
+        setValidationError('Please enter your full name')
+        return
+      }
+      if (!studentId.trim()) {
+        setValidationError('Please enter your Student ID')
+        return
+      }
+      if (!studentIdRegex.test(studentId.trim())) {
+        setValidationError('Student ID must be in format: XX-XXXX-X (e.g., AB-1234-C)')
+        return
+      }
+      if (!section.trim()) {
+        setValidationError('Please enter your section')
+        return
+      }
+      if (!contactValue.trim()) {
+        setValidationError('Please enter your contact information')
+        return
+      }
+    }
+
+    // Validation for anonymous reports
+    if (visibility === 'anonymous' && !disclaimerAccepted) {
+      setValidationError('Please accept the anonymous report disclaimer')
+      return
+    }
+
+    if (!category || !content.trim()) {
+      setValidationError('Please fill in all required fields')
+      return
+    }
 
     setSubmitting(true)
-    setSubmitError(null)
 
     try {
       const report = await reportsDb.submit({
         visibility,
         fullName: visibility === 'public' ? fullName : undefined,
-        email: visibility === 'public' ? email : undefined,
+        email: visibility === 'public' && contactMethod === 'email' ? contactValue : undefined,
+        studentId: visibility === 'public' ? studentId : undefined,
+        section: visibility === 'public' ? section : undefined,
+        contactMethod: visibility === 'public' ? contactMethod : undefined,
+        contactValue: visibility === 'public' ? contactValue : undefined,
         category,
         content,
+        isAnonymous: visibility === 'anonymous',
+        disclaimerAccepted: visibility === 'anonymous' ? disclaimerAccepted : true,
       })
       setSubmitted(report)
+      // Reset form
       setFullName('')
-      setEmail('')
+      setStudentId('')
+      setSection('')
+      setContactMethod('email')
+      setContactValue('')
       setCategory('')
       setContent('')
+      setDisclaimerAccepted(false)
     } catch (error) {
       setSubmitted(null)
       setSubmitError(error instanceof Error ? error.message : 'Unable to submit report right now.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  function handleContinuePastCrisisModal() {
+    setShowCrisisModal(false)
+    // Allow submission to proceed
   }
 
   return (
@@ -95,7 +184,7 @@ export default function Reports() {
                       visibility === 'public' ? 'bg-white text-navy-900 shadow-sm' : 'text-ink-600'
                     )}
                   >
-                    <Eye className="h-3.5 w-3.5" /> Public Report
+                    <User className="h-3.5 w-3.5" /> Public Report
                   </button>
                   <button
                     type="button"
@@ -110,39 +199,106 @@ export default function Reports() {
                 </div>
 
                 {visibility === 'public' && (
-                  <>
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-navy-50 border border-navy-100 p-4">
+                      <p className="text-sm font-semibold text-navy-900 mb-2">Identity Required</p>
+                      <p className="text-xs text-navy-700">Public reports require your identity for follow-up and response.</p>
+                    </div>
+
                     <Field label="Full Name">
-                      <Input required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
-                    </Field>
-                    <Field label="School Email">
-                      <Input
-                        required
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="yourname@gsc.edu.ph"
+                      <Input 
+                        value={fullName} 
+                        onChange={(e) => setFullName(e.target.value)} 
+                        placeholder="Your full name" 
                       />
                     </Field>
-                  </>
+
+                    <Field label="Student ID">
+                      <Input 
+                        value={studentId} 
+                        onChange={(e) => setStudentId(e.target.value.toUpperCase())}
+                        placeholder="XX-XXXX-X (e.g., AB-1234-C)"
+                        maxLength={10}
+                      />
+                      <p className="mt-1 text-xs text-ink-500">Format: XX-XXXX-X</p>
+                    </Field>
+
+                    <Field label="Section">
+                      <Input 
+                        value={section} 
+                        onChange={(e) => setSection(e.target.value)} 
+                        placeholder="e.g., BS-Nursing-1A" 
+                      />
+                    </Field>
+
+                    <Field label="Preferred Contact Method">
+                      <Select value={contactMethod} onChange={(e) => setContactMethod(e.target.value as ContactMethod)}>
+                        <option value="email">{CONTACT_METHOD_LABELS.email}</option>
+                        <option value="messenger">{CONTACT_METHOD_LABELS.messenger}</option>
+                        <option value="sms">{CONTACT_METHOD_LABELS.sms}</option>
+                      </Select>
+                    </Field>
+
+                    <Field label={CONTACT_METHOD_LABELS[contactMethod]}>
+                      <Input 
+                        value={contactValue} 
+                        onChange={(e) => setContactValue(e.target.value)} 
+                        placeholder={
+                          contactMethod === 'email' ? 'yourname@gmail.com' :
+                          contactMethod === 'messenger' ? 'fb.com/yourname' :
+                          '09XX XXX XXXX'
+                        }
+                      />
+                    </Field>
+                  </div>
+                )}
+
+                {visibility === 'anonymous' && (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                      <p className="text-sm font-semibold text-amber-900 mb-2">Anonymous Report</p>
+                      <p className="text-xs text-amber-800">Your identity will not be collected. Limited to facility issues, feedback, and whistleblowing.</p>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <input
+                        type="checkbox"
+                        id="disclaimer"
+                        checked={disclaimerAccepted}
+                        onChange={(e) => setDisclaimerAccepted(e.target.checked)}
+                        className="mt-1"
+                      />
+                      <label htmlFor="disclaimer" className="text-sm text-ink-700">
+                        <strong className="text-danger-700">Required:</strong> I understand that anonymous reports cannot be traced for emergency intervention. 
+                        If this is an emergency, I should contact campus security or emergency services directly.
+                      </label>
+                    </div>
+                  </div>
                 )}
 
                 <Field label="Category">
-                  <Select required value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <Select value={category} onChange={(e) => setCategory(e.target.value as ReportCategory)}>
                     <option value="">Select a category</option>
-                    {CATEGORIES.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                    {availableCategories.map((c) => (
+                      <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
                     ))}
                   </Select>
                 </Field>
 
                 <Field label="What's going on?" hint="Be as specific as you can - location, time, people involved if relevant.">
                   <Textarea
-                    required
                     value={content}
                     onChange={(e) => setContent(e.target.value)}
                     placeholder="Describe your concern..."
+                    rows={4}
                   />
                 </Field>
+
+                {validationError && (
+                  <div className="rounded-app border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
+                    {validationError}
+                  </div>
+                )}
 
                 {submitError && (
                   <div className="rounded-app border border-danger-200 bg-danger-50 px-4 py-3 text-sm text-danger-700">
@@ -150,13 +306,26 @@ export default function Reports() {
                   </div>
                 )}
 
+                {/* Disciplinary Disclaimer Banner */}
+                <div className="rounded-lg bg-danger-50 border border-danger-200 p-4">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="h-5 w-5 text-danger-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-danger-900">Academic Integrity Warning</p>
+                      <p className="mt-1 text-xs text-danger-800">
+                        Malicious spam, fake reports, and fraudulent submissions violate student conduct policies and will be escalated to the Guidance Office for disciplinary action.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <Button type="submit" disabled={submitting} className="w-full">
                   {submitting ? 'Submitting...' : 'Submit Report'}
                 </Button>
 
                 {visibility === 'anonymous' && (
                   <p className="text-center text-xs text-ink-400">
-                    Your name and email are never collected for anonymous reports.
+                    Your identity is never collected for anonymous reports.
                   </p>
                 )}
               </form>
@@ -166,32 +335,45 @@ export default function Reports() {
           <TrackStatusCard />
         </div>
       </div>
+
+      <CrisisModal 
+        isOpen={showCrisisModal} 
+        onClose={() => setShowCrisisModal(false)}
+        onContinue={handleContinuePastCrisisModal}
+      />
     </div>
   )
 }
 
 function TrackStatusCard() {
   const [code, setCode] = useState('')
+  const [studentId, setStudentId] = useState('')
   const [result, setResult] = useState<Report | null | undefined>(undefined)
 
   async function check() {
-    const found = await reportsDb.findByTrackingCode(code)
+    const found = await reportsDb.findByTrackingCodeAndStudentId(code, studentId)
     setResult(found ?? null)
   }
 
   return (
     <Card className="p-5">
       <p className="font-bold text-ink-900">Check a Report</p>
-      <p className="mt-1 text-sm text-ink-600">Have a tracking code? See its current status.</p>
-      <div className="mt-3 flex gap-2">
+      <p className="mt-1 text-sm text-ink-600">Enter your tracking code and Student ID to view status.</p>
+      <div className="mt-3 space-y-2">
         <Input
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder="REPORT-1234"
+          placeholder="Tracking code (e.g., SBO-ABCD)"
           className="text-sm"
         />
-        <Button variant="secondary" onClick={check} className="shrink-0 !px-3">
-          <Search className="h-4 w-4" />
+        <Input
+          value={studentId}
+          onChange={(e) => setStudentId(e.target.value.toUpperCase())}
+          placeholder="Student ID (XX-XXXX-X)"
+          className="text-sm"
+        />
+        <Button variant="secondary" onClick={check} className="w-full gap-2">
+          <Search className="h-4 w-4" /> Check Status
         </Button>
       </div>
 
@@ -204,10 +386,17 @@ function TrackStatusCard() {
                 <StatusPill status={result.status} />
               </div>
               <p className="mt-1 text-xs text-ink-400">Filed {formatDate(result.createdAt)}</p>
+              {result.adminReply && (
+                <div className="mt-2 rounded-app bg-navy-50 px-3 py-2">
+                  <p className="text-xs text-ink-600">
+                    <span className="font-semibold">SBO Reply:</span> {result.adminReply}
+                  </p>
+                </div>
+              )}
               {result.adminNotes && <p className="mt-2 text-xs text-ink-600">{result.adminNotes}</p>}
             </>
           ) : (
-            <p className="text-sm text-ink-400">No report found with that code.</p>
+            <p className="text-sm text-ink-400">No report found with that code and Student ID.</p>
           )}
         </div>
       )}
