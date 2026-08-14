@@ -10,16 +10,19 @@ import type { UpdateEntry, UpdateCategory } from '@/lib/types'
 
 const CATEGORIES: UpdateCategory[] = ['General Assembly', 'Exec Board', 'Finance', 'Event', 'Policy']
 
-const emptyForm = {
-  title: '',
-  category: 'General Assembly' as UpdateCategory,
-  description: '',
-  date: new Date().toISOString().slice(0, 10),
+function createEmptyForm(): UpdateEntry {
+  return {
+    id: crypto.randomUUID(),
+    title: '',
+    category: 'General Assembly',
+    description: '',
+    date: new Date().toISOString().slice(0, 10),
+  }
 }
 
 export default function AdminUpdates() {
   const [updates] = useLiveData(updatesDb.list)
-  const [editing, setEditing] = useState<UpdateEntry | typeof emptyForm | null>(null)
+  const [editing, setEditing] = useState<UpdateEntry | 'new' | null>(null)
 
   async function handleDelete(id: string) {
     if (confirm('Delete this update?')) await updatesDb.remove(id)
@@ -29,7 +32,7 @@ export default function AdminUpdates() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">Manage Updates</h1>
-        <Button onClick={() => setEditing(emptyForm)} className="gap-1.5">
+        <Button onClick={() => setEditing('new')} className="gap-1.5">
           <Plus className="h-4 w-4" /> Add Update
         </Button>
       </div>
@@ -55,14 +58,15 @@ export default function AdminUpdates() {
         ))}
       </div>
 
-      {editing && <UpdateForm initial={editing} onClose={() => setEditing(null)} />}
+      {editing && <UpdateForm initial={editing === 'new' ? null : editing} onClose={() => setEditing(null)} />}
     </div>
   )
 }
 
-function UpdateForm({ initial, onClose }: { initial: UpdateEntry | typeof emptyForm; onClose: () => void }) {
-  const [form, setForm] = useState(initial)
+function UpdateForm({ initial, onClose }: { initial: UpdateEntry | null; onClose: () => void }) {
+  const [form, setForm] = useState<UpdateEntry>(() => initial ?? createEmptyForm())
   const [saving, setSaving] = useState(false)
+  const isNew = initial === null
 
   async function save() {
     if (!form.title || !form.description) return
@@ -79,7 +83,7 @@ function UpdateForm({ initial, onClose }: { initial: UpdateEntry | typeof emptyF
   }
 
   return (
-    <Modal title={'id' in form ? 'Edit Update' : 'Add Update'} onClose={onClose}>
+    <Modal title={isNew ? 'Add Update' : 'Edit Update'} onClose={onClose}>
       <div className="space-y-4">
         <Field label="Title">
           <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="General Assembly - 2nd Semester Opening" />
