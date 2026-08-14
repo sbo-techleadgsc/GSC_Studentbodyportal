@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { clsx } from '@/lib/clsx'
 
 // ── Button ─────────────────────────────────────────────────
-type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger'
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success'
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
   size?: 'sm' | 'md'
@@ -15,6 +15,7 @@ const variantClasses: Record<ButtonVariant, string> = {
   outline: 'bg-white/90 border border-navy-900/15 text-navy-900 hover:bg-navy-50 active:bg-navy-100',
   ghost: 'bg-transparent text-navy-900 hover:bg-navy-50',
   danger: 'bg-danger-600 text-white hover:opacity-90 shadow-[0_10px_25px_rgba(194,43,62,0.16)]',
+  success: 'bg-success-600 text-white hover:opacity-90 shadow-[0_10px_25px_rgba(34,139,86,0.16)]',
 }
 
 export function Button({ variant = 'primary', size = 'md', className, ...props }: ButtonProps) {
@@ -66,14 +67,14 @@ export function Badge({ tone = 'navy', children, className }: { tone?: BadgeTone
 }
 
 // ── Status pill (for promises / reports) ──────────────────
-export function StatusPill({ status }: { status: 'pending' | 'in-progress' | 'completed' | 'new' | 'in-review' | 'resolved' }) {
+export function StatusPill({ status }: { status: 'pending' | 'in-progress' | 'completed' | 'under-review' | 'resolved' | 'rejected' }) {
   const map: Record<string, { tone: BadgeTone; label: string }> = {
     pending: { tone: 'neutral', label: 'Pending' },
     'in-progress': { tone: 'navy', label: 'In Progress' },
     completed: { tone: 'success', label: 'Completed' },
-    new: { tone: 'gold', label: 'New' },
-    'in-review': { tone: 'navy', label: 'In Review' },
+    'under-review': { tone: 'navy', label: 'Under Review' },
     resolved: { tone: 'success', label: 'Resolved' },
+    rejected: { tone: 'danger', label: 'Rejected' },
   }
   const { tone, label } = map[status]
   return <Badge tone={tone}>{label}</Badge>

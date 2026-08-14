@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const [reports] = useLiveData(reportsDb.list)
   const [polls] = useLiveData(pollsDb.list)
 
-  const newReports = reports?.filter((r) => r.status === 'new').length ?? 0
+  const newReports = reports?.filter((r) => r.status === 'pending').length ?? 0
   const totalBudget = budget?.reduce((s, b) => s + b.allocated, 0) ?? 0
 
   return (

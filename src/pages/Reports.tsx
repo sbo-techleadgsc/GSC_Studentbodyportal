@@ -43,7 +43,7 @@ export default function Reports() {
   const [section, setSection] = useState('')
   const [contactMethod, setContactMethod] = useState<ContactMethod>('email')
   const [contactValue, setContactValue] = useState('')
-  const [category, setCategory] = useState<ReportCategory>('')
+  const [category, setCategory] = useState<ReportCategory | ''>('')
   const [content, setContent] = useState('')
   const [disclaimerAccepted, setDisclaimerAccepted] = useState(false)
   const [submitted, setSubmitted] = useState<Report | null>(null)
