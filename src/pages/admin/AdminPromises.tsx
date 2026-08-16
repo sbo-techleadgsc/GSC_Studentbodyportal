@@ -77,7 +77,10 @@ function PromiseForm({
     setSaving(true)
     try {
       const officer = officers.find((o) => o.id === form.officerId)
-      await promisesDb.upsert({ ...form, officerName: officer?.name ?? form.officerName })
+      const itemToSave: Promise_ = 'id' in form
+        ? { ...form, officerName: officer?.name ?? form.officerName, updatedAt: new Date().toISOString() }
+        : { ...form, id: crypto.randomUUID(), officerName: officer?.name ?? form.officerName, updatedAt: new Date().toISOString() }
+      await promisesDb.upsert(itemToSave)
       onClose()
     } catch (error) {
       console.error('Failed to save promise:', error)
