@@ -5,6 +5,7 @@ import { Badge, EmptyState } from '@/components/ui/Primitives'
 import { useLiveData } from '@/lib/hooks'
 import { newsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
+import { parseCredits } from '@/lib/newsCredits'
 import { siteConfig } from '@/config/site'
 
 export default function NewsArticle() {
@@ -28,7 +29,8 @@ export default function NewsArticle() {
     )
   }
 
-  const paragraphs = article.content
+  const { credits, body } = parseCredits(article.content)
+  const paragraphs = body
     .split(/\n/)
     .map((p) => p.trim())
     .filter(Boolean)
@@ -54,16 +56,43 @@ export default function NewsArticle() {
             {article.title}
           </h1>
 
-          <p className="mt-3 text-sm text-ink-600">
-            By <span className="font-semibold text-ink-900">{siteConfig.orgName}</span> &middot; {siteConfig.schoolName}
-          </p>
+          <div className="mt-4 border-y border-navy-900/10 py-3">
+            <p className="text-sm leading-relaxed text-ink-600">
+              {credits.author ? (
+                <>
+                  <span className="font-semibold text-ink-900">By {credits.author}</span>
+                  <span className="mx-1.5 text-ink-400">&middot;</span>
+                </>
+              ) : (
+                <>
+                  <span className="font-semibold text-ink-900">By {siteConfig.orgName}</span>
+                  <span className="mx-1.5 text-ink-400">&middot;</span>
+                </>
+              )}
+              {siteConfig.schoolName}
+              {credits.source && (
+                <>
+                  <span className="mx-1.5 text-ink-400">&middot;</span>
+                  <span className="text-ink-400">Source: </span>
+                  <span className="font-semibold text-ink-900">{credits.source}</span>
+                </>
+              )}
+            </p>
+          </div>
 
           {article.imageUrl && (
-            <img
-              src={article.imageUrl}
-              alt={article.title}
-              className="mt-8 h-64 w-full rounded-2xl object-cover sm:h-80"
-            />
+            <figure className="mt-6">
+              <img
+                src={article.imageUrl}
+                alt={article.title}
+                className="h-64 w-full rounded-2xl object-cover sm:h-80"
+              />
+              {credits.photographer && (
+                <figcaption className="mt-2 text-right text-xs text-ink-400">
+                  PHOTO BY {credits.photographer.toUpperCase()}
+                </figcaption>
+              )}
+            </figure>
           )}
 
           <div className="mt-8 space-y-5 border-t border-navy-900/10 pt-8">
