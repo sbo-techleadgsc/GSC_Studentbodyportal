@@ -65,7 +65,7 @@ export default function NewsArticle() {
                 </>
               ) : (
                 <>
-                  <span className="font-semibold text-ink-900">By {siteConfig.orgName}</span>
+                  <span className="font-semibold text-ink-900">By {siteConfig.schoolName} {siteConfig.orgName}</span>
                   <span className="mx-1.5 text-ink-400">&middot;</span>
                 </>
               )}

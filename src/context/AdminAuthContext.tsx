@@ -8,6 +8,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import { siteConfig } from '@/config/site'
 
 interface AdminAuthValue {
   isAdmin: boolean
@@ -16,6 +17,7 @@ interface AdminAuthValue {
   login: (email: string, password: string) => Promise<boolean>
   requestMagicLink: (email: string) => Promise<boolean>
   signUpPublicUser: (email: string, password: string, studentId?: string) => Promise<boolean>
+  isAdminEmail: (email: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -130,9 +132,28 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setAdminName(null)
   }
 
+  // Used by the public Account page to skip the Student ID field for
+  // admins. Checks the config allowlist first, then best-effort lookup
+  // in the admins table (fails safe to "not admin" on RLS errors).
+  const isAdminEmail = async (email: string) => {
+    if (!supabase) return false
+    const normalized = email.trim().toLowerCase()
+    if (siteConfig.adminEmails.some((e) => e.trim().toLowerCase() === normalized)) return true
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('email', normalized)
+        .maybeSingle()
+      return !error && Boolean(data)
+    } catch {
+      return false
+    }
+  }
+
   return (
     <AdminAuthContext.Provider
-      value={{ isAdmin, isAuthenticated, adminName, login, requestMagicLink, signUpPublicUser, logout }}
+      value={{ isAdmin, isAuthenticated, adminName, login, requestMagicLink, signUpPublicUser, isAdminEmail, logout }}
     >
       {children}
     </AdminAuthContext.Provider>

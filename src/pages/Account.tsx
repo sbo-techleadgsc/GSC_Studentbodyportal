@@ -12,16 +12,33 @@ import { STUDENT_ID_FORMAT, STUDENT_ID_PLACEHOLDER, isValidStudentId, normalizeS
 import type { Report } from '@/lib/types'
 
 export default function Account() {
-  const { isAuthenticated, adminName, signUpPublicUser, logout } = useAdminAuth()
+  const { isAuthenticated, adminName, signUpPublicUser, isAdminEmail, logout } = useAdminAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [studentId, setStudentId] = useState('')
+  const [isAdminAccount, setIsAdminAccount] = useState(false)
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userStudentId, setUserStudentId] = useState<string | null>(null)
   const [reports, setReports] = useState<Report[]>([])
+
+  // Detect admin emails so we can skip the Student ID field for them
+  useEffect(() => {
+    let active = true
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed) {
+      setIsAdminAccount(false)
+      return
+    }
+    isAdminEmail(trimmed).then((isAdmin) => {
+      if (active) setIsAdminAccount(isAdmin)
+    })
+    return () => {
+      active = false
+    }
+  }, [email, isAdminEmail])
 
   // Get user email when authenticated
   useEffect(() => {
@@ -62,20 +79,22 @@ export default function Account() {
       setAuthError('Please enter your email and password.')
       return
     }
-    if (!studentId.trim()) {
-      setAuthError('Please enter your Student ID.')
-      return
-    }
-    if (!isValidStudentId(studentId)) {
-      setAuthError(`Student ID must be in format: ${STUDENT_ID_FORMAT} (e.g., AB-12345)`)
-      return
+    if (!isAdminAccount) {
+      if (!studentId.trim()) {
+        setAuthError('Please enter your Student ID.')
+        return
+      }
+      if (!isValidStudentId(studentId)) {
+        setAuthError(`Student ID must be in format: ${STUDENT_ID_FORMAT} (e.g., 00-00000)`)
+        return
+      }
     }
     if (!termsAccepted) {
       setAuthError('Please accept the Terms & Conditions to create your account.')
       return
     }
 
-    const ok = await signUpPublicUser(email, password, normalizeStudentId(studentId))
+    const ok = await signUpPublicUser(email, password, isAdminAccount ? undefined : normalizeStudentId(studentId))
     if (!ok) {
       setAuthError('We could not sign you in. Please check your email and password, or try again later.')
       return
@@ -189,17 +208,23 @@ export default function Account() {
 
         <Card className="mt-8 p-6">
           <form onSubmit={handleAuthSubmit} className="space-y-4">
-            <Field label="Your email">
-              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@school.edu" />
+            <Field label="Your personal email" hint="Use the email you check regularly (e.g., Gmail or Yahoo)">
+              <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="yourname@gmail.com" />
             </Field>
-            <Field label="Student ID" hint={`Format: ${STUDENT_ID_FORMAT}`}>
-              <Input
-                value={studentId}
-                onChange={(e) => setStudentId(e.target.value.toUpperCase())}
-                placeholder={STUDENT_ID_PLACEHOLDER}
-                maxLength={8}
-              />
-            </Field>
+            {isAdminAccount ? (
+              <div className="rounded-app border border-gold-500/40 bg-gold-50 p-3">
+                <p className="text-sm text-gold-900">Admin account detected &mdash; no Student ID needed.</p>
+              </div>
+            ) : (
+              <Field label="Student ID" hint={`Format: ${STUDENT_ID_FORMAT}`}>
+                <Input
+                  value={studentId}
+                  onChange={(e) => setStudentId(e.target.value)}
+                  placeholder={STUDENT_ID_PLACEHOLDER}
+                  maxLength={8}
+                />
+              </Field>
+            )}
             <Field label="Password">
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
             </Field>
