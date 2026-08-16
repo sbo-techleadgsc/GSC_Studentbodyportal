@@ -32,9 +32,9 @@ export default function AdminDashboard() {
   return (
     <div>
       <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">Welcome, {adminName}</h1>
-      <p className="mt-1 text-ink-600">Here's what's happening across the portal.</p>
+      <p className="mt-1 font-thin text-ink-600">Here's what's happening across the portal.</p>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4 responsive-grid">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat value={String(officers?.length ?? 0)} label="Officers" />
         <Stat value={String(promises?.length ?? 0)} label="Promises" />
         <Stat value={pesoCompact(totalBudget)} label="Budget" />
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
       )}
 
       <h2 className="mt-8 text-lg font-bold text-ink-900">Manage Content</h2>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 responsive-grid">
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {SHORTCUTS.map(({ to, label, icon: Icon, desc }) => (
           <Link key={to} to={to}>
             <Card className="flex h-full items-start gap-3 p-5 transition-transform hover:-translate-y-0.5">

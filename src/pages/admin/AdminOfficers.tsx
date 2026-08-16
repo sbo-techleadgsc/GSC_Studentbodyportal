@@ -27,7 +27,7 @@ export default function AdminOfficers() {
         </Button>
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 responsive-grid">
+      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {officers?.map((o) => (
           <Card key={o.id} className="p-5">
             <div className="flex items-center gap-3">

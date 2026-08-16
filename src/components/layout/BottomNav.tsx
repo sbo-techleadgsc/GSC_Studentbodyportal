@@ -13,22 +13,14 @@ export function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               clsx(
-                'relative flex min-w-[56px] flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-all duration-200 ease-out transform active:scale-90',
-                isActive ? 'text-navy-900 scale-110' : 'text-ink-400 hover:scale-105'
+                'relative flex min-w-[56px] flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-colors duration-200 active:scale-90',
+                isActive ? 'text-navy-900' : 'text-ink-400'
               )
             }
           >
             {({ isActive }) => (
               <>
-                <span className="relative">
-                  <Icon
-                    className="h-5 w-5 transition-all duration-200 ease-out"
-                    strokeWidth={isActive ? 2.4 : 2}
-                  />
-                  {isActive && (
-                    <span className="absolute -right-1 -top-0.5 h-1.5 w-1.5 rounded-full bg-success-600 animate-pulse" />
-                  )}
-                </span>
+                <Icon className="h-5 w-5" strokeWidth={isActive ? 2.2 : 2} />
                 {label}
               </>
             )}

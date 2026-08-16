@@ -173,7 +173,7 @@ export function SendSongPage() {
           </p>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] responsive-grid">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card className="border border-white/10 bg-slate-900/70 p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">

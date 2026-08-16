@@ -21,9 +21,9 @@ export default function Officials() {
         badge={openPoll && <LiveBadge>Voting open &middot; {openPoll.question}</LiveBadge>}
       />
 
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Elected Officials</h2>
-        <p className="mt-1.5 text-ink-600">{siteConfig.academicYear} Student Organization Officers</p>
+        <p className="mt-1.5 font-thin text-ink-600">{siteConfig.academicYear} Student Organization Officers</p>
 
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {officers?.map((officer) => {

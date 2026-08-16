@@ -15,7 +15,7 @@ interface AdminAuthValue {
   adminName: string | null
   login: (email: string, password: string) => Promise<boolean>
   requestMagicLink: (email: string) => Promise<boolean>
-  signUpPublicUser: (email: string, password: string) => Promise<boolean>
+  signUpPublicUser: (email: string, password: string, studentId?: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -109,11 +109,12 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // but it will NEVER be an admin unless you add them to the admins
   // table yourself. isAdmin is derived fresh by applySession(), not
   // set here.
-  const signUpPublicUser = async (email: string, password: string) => {
+  const signUpPublicUser = async (email: string, password: string, studentId?: string) => {
     if (!supabase) return false
     const { error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: password.trim(),
+      options: studentId ? { data: { student_id: studentId } } : undefined,
     })
     if (error) {
       console.error('[signUpPublicUser] Error:', error.message)

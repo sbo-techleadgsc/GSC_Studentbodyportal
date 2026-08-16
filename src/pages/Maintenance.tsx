@@ -1,4 +1,4 @@
-import gscLogo from '@/assets/personal_assets/gsc_logo_favicon.svg'
+import gscLogo from '@/assets/personal_assets/gsc_sbo_logo.png'
 import { Settings, Clock, Mail } from 'lucide-react'
 
 export default function Maintenance() {
@@ -8,8 +8,8 @@ export default function Maintenance() {
         <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12 text-center">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-slate-100">
-              <img src={gscLogo} alt="GSC Logo" className="h-12 w-12" />
+            <div className="h-20 w-20 flex items-center justify-center rounded-full bg-white p-2">
+              <img src={gscLogo} alt="GSC Logo" className="h-16 w-16 object-contain" />
             </div>
           </div>
 

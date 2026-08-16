@@ -10,12 +10,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: 'bg-navy-900 text-white hover:bg-navy-800 active:bg-navy-950 shadow-[0_10px_25px_rgba(10,36,99,0.16)]',
+  primary: 'bg-navy-900 text-white hover:bg-navy-800 active:bg-navy-950',
   secondary: 'bg-white text-navy-900 hover:bg-navy-50 active:bg-navy-100 shadow-sm border border-navy-900/10',
   outline: 'bg-white/90 border border-navy-900/15 text-navy-900 hover:bg-navy-50 active:bg-navy-100',
   ghost: 'bg-transparent text-navy-900 hover:bg-navy-50',
-  danger: 'bg-danger-600 text-white hover:opacity-90 shadow-[0_10px_25px_rgba(194,43,62,0.16)]',
-  success: 'bg-success-600 text-white hover:opacity-90 shadow-[0_10px_25px_rgba(34,139,86,0.16)]',
+  danger: 'bg-danger-600 text-white hover:opacity-90',
+  success: 'bg-success-600 text-white hover:opacity-90',
 }
 
 export function Button({ variant = 'primary', size = 'md', className, ...props }: ButtonProps) {
@@ -39,7 +39,7 @@ interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export function Card({ className, children, ...rest }: CardProps) {
   return (
     <div
-      className={clsx('glass-surface rounded-app transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(10,36,99,0.08)]', className)}
+      className={clsx('glass-surface rounded-app transition-colors duration-200 hover:border-navy-900/20', className)}
       {...rest}
     >
       {children}
@@ -84,9 +84,9 @@ export function StatusPill({ status }: { status: 'pending' | 'in-progress' | 'co
 export function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-navy-100/70">{eyebrow}</p>
-      <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">{title}</h1>
-      {subtitle && <p className="mt-2 max-w-xl text-navy-100/80">{subtitle}</p>}
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-navy-900/60">{eyebrow}</p>
+      <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">{title}</h1>
+      {subtitle && <p className="mt-2 max-w-xl text-ink-600">{subtitle}</p>}
     </div>
   )
 }

@@ -1073,15 +1073,14 @@ export const pollsDb = {
       return { ok: false, reason: 'already-voted' }
     }
 
-    try {
-      // Check if user is authenticated
+try {
+      // Only authenticated students can vote. Anonymous/guest sessions are
+      // rejected so every vote is tied to a real verified account (transparency).
       const { data: { user } } = await supabase.auth.getUser()
-      const userId = user?.id
-
-      // If no user, try to get a guest session
-      if (!userId) {
-        await ensureGuestSession()
+      if (!user || user.is_anonymous) {
+        return { ok: false, reason: 'sign-in-required' }
       }
+      const userId = user.id
 
       const { data: pollData } = await supabase
         .from('polls')
@@ -1107,29 +1106,13 @@ export const pollsDb = {
         return { ok: false, reason: 'option-not-found' }
       }
 
-      // Get the current user ID (either authenticated or guest)
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      const currentUserId = currentUser?.id
-
-      if (!currentUserId) {
-        console.error('[pollsDb] No user ID available for voting')
-        return { ok: false, reason: 'no-user' }
-      }
-
-      const { error } = await supabase
+const { error } = await supabase
         .from('poll_votes')
-        .insert({ poll_id: pollId, option_id: optionId, user_id: currentUserId })
+        .insert({ poll_id: pollId, option_id: optionId, user_id: userId })
 
       if (!error) {
-        // Get current votes and increment
-        const { data: currentOption } = await supabase
-          .from('poll_options')
-          .select('votes')
-          .eq('id', optionId)
-          .single()
-        const currentVotes = currentOption?.votes ?? 0
-        await supabase.from('poll_options').update({ votes: currentVotes + 1 }).eq('id', optionId)
-
+        // Vote tallying is handled by the DB trigger (bump_poll_option_votes),
+        // so client code never touches votes directly — no inflation possible.
         const votedData = voted ?? {}
         votedData[pollId] = optionId
         write(KEYS.votedPolls, votedData)

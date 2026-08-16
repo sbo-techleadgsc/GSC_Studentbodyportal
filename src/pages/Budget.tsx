@@ -41,9 +41,9 @@ export default function Budget() {
         badge={openPoll && <LiveBadge>Voting open &middot; {openPoll.question}</LiveBadge>}
       />
 
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Budget Tracker</h2>
-        <p className="mt-1.5 text-ink-600">{siteConfig.academicYear} Student Organization Fund</p>
+        <p className="mt-1.5 font-thin text-ink-600">{siteConfig.academicYear} Student Organization Fund</p>
 
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           <Card className="p-6">

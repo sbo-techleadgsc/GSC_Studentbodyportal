@@ -10,6 +10,7 @@ import { reportsDb, pollsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
 import { clsx } from '@/lib/clsx'
 import { shouldTriggerCrisisInterceptor } from '@/lib/crisisDetection'
+import { STUDENT_ID_FORMAT, STUDENT_ID_PLACEHOLDER, isValidStudentId, normalizeStudentId } from '@/lib/studentId'
 import type { Report, ReportCategory, ContactMethod } from '@/lib/types'
 
 const PUBLIC_CATEGORIES: ReportCategory[] = ['direct-inquiry', 'lost-found', 'individual-complaint', 'administrative-followup', 'other']
@@ -54,9 +55,6 @@ export default function Reports() {
 
   const availableCategories = visibility === 'public' ? PUBLIC_CATEGORIES : ANONYMOUS_CATEGORIES
 
-  // Student ID validation regex: XX-XXXX-X format
-  const studentIdRegex = /^[A-Z]{2}-\d{4}-[A-Z0-9]$/
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
     setValidationError(null)
@@ -78,8 +76,8 @@ export default function Reports() {
         setValidationError('Please enter your Student ID')
         return
       }
-      if (!studentIdRegex.test(studentId.trim())) {
-        setValidationError('Student ID must be in format: XX-XXXX-X (e.g., AB-1234-C)')
+      if (!isValidStudentId(studentId)) {
+        setValidationError(`Student ID must be in format: ${STUDENT_ID_FORMAT} (e.g., AB-12345)`)
         return
       }
       if (!section.trim()) {
@@ -110,7 +108,7 @@ export default function Reports() {
         visibility,
         fullName: visibility === 'public' ? fullName : undefined,
         email: visibility === 'public' && contactMethod === 'email' ? contactValue : undefined,
-        studentId: visibility === 'public' ? studentId : undefined,
+        studentId: visibility === 'public' ? normalizeStudentId(studentId) : undefined,
         section: visibility === 'public' ? section : undefined,
         contactMethod: visibility === 'public' ? contactMethod : undefined,
         contactValue: visibility === 'public' ? contactValue : undefined,
@@ -149,11 +147,11 @@ export default function Reports() {
         badge={openPoll && <LiveBadge>Voting open &middot; {openPoll.question}</LiveBadge>}
       />
 
-      <div className="mx-auto max-w-3xl px-6 py-10">
-        <div className="grid gap-8 lg:grid-cols-[1fr_260px] lg:items-start responsive-grid">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="grid gap-8 lg:grid-cols-[1fr_260px] lg:items-start">
           <div>
             <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Student Report Form</h2>
-            <p className="mt-1.5 text-ink-600">Submit concerns, feedback, or grievances confidentially.</p>
+            <p className="mt-1.5 font-thin text-ink-600">Submit concerns, feedback, or grievances confidentially.</p>
 
             {submitted ? (
               <Card className="mt-6 p-6">
@@ -217,10 +215,10 @@ export default function Reports() {
                       <Input 
                         value={studentId} 
                         onChange={(e) => setStudentId(e.target.value.toUpperCase())}
-                        placeholder="XX-XXXX-X (e.g., AB-1234-C)"
-                        maxLength={10}
+                        placeholder={STUDENT_ID_PLACEHOLDER}
+                        maxLength={8}
                       />
-                      <p className="mt-1 text-xs text-ink-500">Format: XX-XXXX-X</p>
+                      <p className="mt-1 text-xs text-ink-500">Format: {STUDENT_ID_FORMAT}</p>
                     </Field>
 
                     <Field label="Section">
@@ -351,7 +349,7 @@ function TrackStatusCard() {
   const [result, setResult] = useState<Report | null | undefined>(undefined)
 
   async function check() {
-    const found = await reportsDb.findByTrackingCodeAndStudentId(code, studentId)
+    const found = await reportsDb.findByTrackingCodeAndStudentId(code, normalizeStudentId(studentId))
     setResult(found ?? null)
   }
 
@@ -369,7 +367,7 @@ function TrackStatusCard() {
         <Input
           value={studentId}
           onChange={(e) => setStudentId(e.target.value.toUpperCase())}
-          placeholder="Student ID (XX-XXXX-X)"
+          placeholder={`Student ID (${STUDENT_ID_FORMAT})`}
           className="text-sm"
         />
         <Button variant="secondary" onClick={check} className="w-full gap-2">

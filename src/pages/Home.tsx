@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import {
-  ArrowRight,
   Flag,
   Users,
   CheckSquare,
@@ -15,14 +14,13 @@ import {
   MessageSquare,
 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Button, Card, Badge, StatusPill } from '@/components/ui/Primitives'
 import { siteConfig } from '@/config/site'
 import { useLiveData } from '@/lib/hooks'
 import { officersDb, promisesDb, budgetDb, newsDb, pollsDb, updatesDb, eventsDb } from '@/lib/store'
 import { pesoCompact } from '@/lib/format'
 import { formatDate, localDateKey } from '@/lib/format'
-import gscLogo from '@/assets/personal_assets/gsc_log_full.svg'
+import gscSboLockup from '@/assets/personal_assets/gsc_sbo_lockup.png'
 
 const FEATURES = [
   { to: '/officials', icon: Users, title: 'Elected Officials', desc: 'Meet your student organization officers - their roles, backgrounds, and contact information.' },
@@ -64,85 +62,60 @@ export default function Home() {
   return (
     <div>
       {/* ── Hero ─────────────────────────────────────────── */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: 'easeOut' }}
-        className="relative overflow-hidden rounded-3xl mx-4 sm:mx-6 mt-4 sm:mt-6"
+        transition={{ duration: 0.5, ease: 'easeOut' }}
+        className="mx-auto max-w-4xl px-4 pb-8 pt-12 text-center sm:px-6 sm:pb-10 sm:pt-16"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 rounded-3xl" />
-        <div className="pointer-events-none absolute -left-24 -bottom-32 h-96 w-96 rounded-full bg-gold-400/15 blur-3xl" aria-hidden />
-        <div className="cross-emblem pointer-events-none absolute -right-16 -top-10 h-96 w-96 bg-white/[0.05] sm:h-[28rem] sm:w-[28rem]" aria-hidden />
-        <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-12 sm:pb-16 sm:pt-14 lg:flex lg:items-center lg:gap-14">
-          <div className="max-w-3xl">
-            <div className="inline-flex flex-col rounded-[1.6rem] border border-white/15 bg-white/10 px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-md sm:px-6 sm:py-5">
-              <LiveBadge>Official SBO Web Portal &middot; {siteConfig.academicYear}</LiveBadge>
+        <motion.img
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, delay: 0.1, ease: 'easeOut' }}
+          src={gscSboLockup}
+          alt={`${siteConfig.schoolName} ${siteConfig.orgName} logo`}
+          className="mx-auto h-auto w-64 max-w-full sm:w-80"
+        />
 
-              <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
-                {siteConfig.schoolName}
-                <br />
-                <span className="text-gold-400">{siteConfig.orgName}</span>
-              </h1>
+        <p className="mt-8 text-xs font-semibold uppercase tracking-[0.22em] text-ink-400">
+          Official SBO Web Portal &middot; {siteConfig.academicYear}
+        </p>
 
-              <p className="mt-5 max-w-xl text-[15px] leading-relaxed text-navy-100/80 sm:text-base">
-                {siteConfig.tagline}
-              </p>
-            </div>
+        <h1 className="mt-4 text-4xl font-extrabold leading-[1.1] tracking-tight text-navy-900 sm:text-5xl lg:text-6xl">
+          {siteConfig.schoolName}
+          <span className="block text-ink-900">{siteConfig.orgName}</span>
+        </h1>
 
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:gap-4">
-              <Link to="/officials" className="w-full sm:w-[calc(50%-0.5rem)]">
-                <Button
-                  variant="secondary"
-                  className="w-full justify-between rounded-[1.15rem] border border-white/20 bg-white/15 px-4 py-3.5 text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/25 active:scale-[0.98]"
-                >
-                  <span className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Meet the Officials
-                  </span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-              <Link to="/reports" className="w-full sm:w-[calc(50%-0.5rem)]">
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between rounded-[1.15rem] border border-white/30 !bg-white/20 px-4 py-3.5 !text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:!bg-white/30 active:scale-[0.98]"
-                >
-                  <span className="flex items-center gap-2">
-                    <Flag className="h-4 w-4" />
-                    File a Report
-                  </span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+        <p className="mx-auto mt-5 max-w-2xl font-thin text-base leading-relaxed text-ink-600 sm:text-lg">
+          {siteConfig.tagline}
+        </p>
 
-          {/* Logo lockup — properly sized, not stretched as a background */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
-            className="mt-10 flex justify-center lg:mt-0 lg:flex-1 lg:justify-end"
-          >
-            <div className="w-52 rounded-2xl bg-white p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] sm:w-64 sm:p-4 lg:w-72">
-              <img src={gscLogo} alt={`${siteConfig.schoolName} logo`} className="h-auto w-full rounded-xl" />
-            </div>
-          </motion.div>
+        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+          <Link to="/officials" className="w-full sm:w-auto">
+            <Button className="w-full rounded-full px-8 py-3 sm:w-auto">
+              <Users className="h-4 w-4" /> Meet the Officials
+            </Button>
+          </Link>
+          <Link to="/reports" className="w-full sm:w-auto">
+            <Button variant="outline" className="w-full rounded-full px-8 py-3 sm:w-auto">
+              <Flag className="h-4 w-4" /> File a Report
+            </Button>
+          </Link>
         </div>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.6 }}
-        className="max-w-6xl px-6 mx-4 sm:mx-6 lg:mx-auto"
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="mx-auto max-w-6xl px-4 sm:px-6"
       >
         {/* ── At a glance dashboard ────────────────────────── */}
         <section className="py-14 sm:py-16">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">At a Glance</h2>
-          <p className="mt-2 text-ink-600">The latest from your student government, updated live.</p>
+          <p className="mt-2 font-thin text-ink-600">The latest from your student government, updated live.</p>
 
-          <div className="mt-8 grid gap-5 responsive-grid sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {/* Upcoming events */}
             <Card className="p-6 rounded-2xl">
               <div className="flex items-center justify-between">
@@ -261,9 +234,9 @@ export default function Home() {
         {/* ── What this portal offers ─────────────────────── */}
         <section className="py-14 sm:py-16">
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">What This Portal Offers</h2>
-          <p className="mt-2 max-w-xl text-ink-600">Eight dedicated sections - everything about your student government, in one place.</p>
+          <p className="mt-2 max-w-xl font-thin text-ink-600">Eight dedicated sections - everything about your student government, in one place.</p>
 
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 responsive-grid">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map(({ to, icon: Icon, title, desc }) => (
               <Link key={to} to={to}>
                 <Card className="group h-full p-6 transition-transform hover:-translate-y-0.5 rounded-2xl">

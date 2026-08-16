@@ -627,7 +627,22 @@ export default function Community() {
           </div>
 
           <div className="rounded-[28px] border border-amber-800/20 bg-amber-950/10 p-4">
-            <div className="relative min-h-[260px] overflow-hidden rounded-[24px] border border-amber-800/20 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(255,255,255,0.15))] p-4">
+            {/* Mobile: simple stacked notes — no absolute-position overlap */}
+            <div className="flex flex-col gap-3 sm:hidden">
+              {messages.slice(0, 4).map((msg, index) => {
+                const meta = messageMeta[msg.id] || {} as MessageMeta
+                const colorConfig = COLORS[index % COLORS.length]
+                return (
+                  <div key={msg.id} className={`rounded-2xl border-2 p-3 ${colorConfig.bg} ${colorConfig.border} ${colorConfig.shadow}`}>
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-600">{meta.senderName || meta.nickname || 'Anonymous'}</p>
+                    <p className="mt-1.5 text-sm font-semibold text-slate-800">{msg.message.slice(0, 80)}{msg.message.length > 80 ? '…' : ''}</p>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* sm+: decorative rotated collage */}
+            <div className="relative hidden min-h-[260px] overflow-hidden rounded-[24px] border border-amber-800/20 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.85),_rgba(255,255,255,0.15))] p-4 sm:block">
               {messages.slice(0, 6).map((msg, index) => {
                 const meta = messageMeta[msg.id] || {} as MessageMeta
                 const rotation = getRandomRotation()

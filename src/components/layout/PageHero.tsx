@@ -13,19 +13,15 @@ export function PageHero({
   children?: ReactNode
 }) {
   return (
-    <div className="relative overflow-hidden bg-navy-900">
-      <div
-        className="cross-emblem pointer-events-none absolute -right-10 top-0 h-64 w-64 bg-white/[0.05] sm:h-80 sm:w-80"
-        aria-hidden
-      />
-      <div className="relative mx-auto max-w-6xl px-6 pb-8 pt-8 sm:pb-10 sm:pt-10">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-navy-100/60">
+    <div className="border-b border-navy-900/5 bg-surface">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-navy-900/60">
           {siteConfig.schoolName} &middot; {siteConfig.orgName}
         </p>
-        <h1 className="mt-1.5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+        <h1 className="mt-1.5 text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">
           {title}
         </h1>
-        {subtitle && <p className="mt-2 max-w-xl text-[15px] text-navy-100/75">{subtitle}</p>}
+        {subtitle && <p className="mt-2 max-w-xl font-thin text-[15px] text-ink-600">{subtitle}</p>}
         {badge && <div className="mt-4">{badge}</div>}
         {children}
       </div>

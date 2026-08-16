@@ -36,9 +36,9 @@ export default function Promises() {
         badge={openPoll && <LiveBadge>Voting open &middot; {openPoll.question}</LiveBadge>}
       />
 
-      <div className="mx-auto max-w-6xl px-6 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
         <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Promise Tracker</h2>
-        <p className="mt-1.5 text-ink-600">Monitoring every campaign commitment made to students</p>
+        <p className="mt-1.5 font-thin text-ink-600">Monitoring every campaign commitment made to students</p>
 
         <div className="mt-8 grid grid-cols-3 gap-4">
           <Card className="p-5 text-center">

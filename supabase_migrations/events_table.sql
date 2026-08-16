@@ -19,14 +19,16 @@ CREATE TABLE IF NOT EXISTS events (
 -- Index for fast "events on this day" queries
 CREATE INDEX IF NOT EXISTS idx_events_start_date ON events (start_date);
 
--- Row Level Security: anyone can read the calendar.
+-- RLS: anyone can read the calendar. Only authenticated admins
+-- (users listed in the admins table) can manage events.
 ALTER TABLE events ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Allow public read access to events" ON events;
 CREATE POLICY "Allow public read access to events"
   ON events FOR SELECT
   USING (true);
 
--- Only authenticated admins (users listed in the admins table) can manage events.
+DROP POLICY IF EXISTS "Allow admins to insert events" ON events;
 CREATE POLICY "Allow admins to insert events"
   ON events FOR INSERT
   TO authenticated
@@ -34,6 +36,7 @@ CREATE POLICY "Allow admins to insert events"
     EXISTS (SELECT 1 FROM admins WHERE admins.id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Allow admins to update events" ON events;
 CREATE POLICY "Allow admins to update events"
   ON events FOR UPDATE
   TO authenticated
@@ -41,6 +44,7 @@ CREATE POLICY "Allow admins to update events"
     EXISTS (SELECT 1 FROM admins WHERE admins.id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Allow admins to delete events" ON events;
 CREATE POLICY "Allow admins to delete events"
   ON events FOR DELETE
   TO authenticated

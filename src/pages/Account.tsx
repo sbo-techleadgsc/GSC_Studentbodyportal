@@ -1,5 +1,5 @@
 import { useState, type FormEvent, useEffect } from 'react'
-import { User as UserIcon, LogOut, CheckCircle2, FileText } from 'lucide-react'
+import { User as UserIcon, LogOut, CheckCircle2, FileText, ShieldCheck } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { Card, Badge, EmptyState, StatusPill } from '@/components/ui/Primitives'
 import { Field, Input } from '@/components/ui/Form'
@@ -8,15 +8,19 @@ import { useLiveData } from '@/lib/hooks'
 import { reportsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
+import { STUDENT_ID_FORMAT, STUDENT_ID_PLACEHOLDER, isValidStudentId, normalizeStudentId } from '@/lib/studentId'
 import type { Report } from '@/lib/types'
 
 export default function Account() {
   const { isAuthenticated, adminName, signUpPublicUser, logout } = useAdminAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [studentId, setStudentId] = useState('')
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userStudentId, setUserStudentId] = useState<string | null>(null)
   const [reports, setReports] = useState<Report[]>([])
 
   // Get user email when authenticated
@@ -30,9 +34,12 @@ export default function Account() {
             setReports(userReports)
           })
         }
+        const meta = user?.user_metadata as { student_id?: string } | undefined
+        setUserStudentId(meta?.student_id ?? null)
       })
     } else {
       setUserEmail(null)
+      setUserStudentId(null)
       setReports([])
     }
   }, [isAuthenticated])
@@ -42,6 +49,7 @@ export default function Account() {
     setAuthMessage('You have been signed out.')
     setAuthError('')
     setUserEmail(null)
+    setUserStudentId(null)
     setReports([])
   }
 
@@ -54,8 +62,20 @@ export default function Account() {
       setAuthError('Please enter your email and password.')
       return
     }
+    if (!studentId.trim()) {
+      setAuthError('Please enter your Student ID.')
+      return
+    }
+    if (!isValidStudentId(studentId)) {
+      setAuthError(`Student ID must be in format: ${STUDENT_ID_FORMAT} (e.g., AB-12345)`)
+      return
+    }
+    if (!termsAccepted) {
+      setAuthError('Please accept the Terms & Conditions to create your account.')
+      return
+    }
 
-    const ok = await signUpPublicUser(email, password)
+    const ok = await signUpPublicUser(email, password, normalizeStudentId(studentId))
     if (!ok) {
       setAuthError('We could not sign you in. Please check your email and password, or try again later.')
       return
@@ -65,6 +85,8 @@ export default function Account() {
     // Clear form on success
     setEmail('')
     setPassword('')
+    setStudentId('')
+    setTermsAccepted(false)
   }
 
   if (isAuthenticated) {
@@ -75,7 +97,7 @@ export default function Account() {
           badge={<Badge tone="success">Signed in</Badge>}
         />
 
-        <div className="mx-auto max-w-3xl px-6 py-10">
+        <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
           <Card className="p-6">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
@@ -87,6 +109,9 @@ export default function Account() {
                     {adminName || 'User'}
                   </h3>
                   <p className="text-sm text-ink-600">{userEmail || 'No email'}</p>
+                  {userStudentId && (
+                    <p className="mt-0.5 text-xs font-mono text-ink-400">Student ID: {userStudentId}</p>
+                  )}
                   <p className="text-xs text-ink-400 mt-1">You can vote on polls and submit reports</p>
                 </div>
               </div>
@@ -158,14 +183,22 @@ export default function Account() {
     <div>
       <PageHero title="Account" />
 
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Sign in or sign up</h2>
-        <p className="mt-1.5 text-ink-600">Create an account to vote on polls and submit reports.</p>
+        <p className="mt-1.5 font-thin text-ink-600">Create an account to vote on polls and submit reports.</p>
 
         <Card className="mt-8 p-6">
           <form onSubmit={handleAuthSubmit} className="space-y-4">
             <Field label="Your email">
               <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="student@school.edu" />
+            </Field>
+            <Field label="Student ID" hint={`Format: ${STUDENT_ID_FORMAT}`}>
+              <Input
+                value={studentId}
+                onChange={(e) => setStudentId(e.target.value.toUpperCase())}
+                placeholder={STUDENT_ID_PLACEHOLDER}
+                maxLength={8}
+              />
             </Field>
             <Field label="Password">
               <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
@@ -177,6 +210,22 @@ export default function Account() {
                 <p className="text-sm text-success-700">{authMessage}</p>
               </div>
             )}
+
+            <label className="flex cursor-pointer items-start gap-3 rounded-app border border-navy-900/10 bg-navy-50/50 p-4">
+              <input
+                type="checkbox"
+                checked={termsAccepted}
+                onChange={(e) => setTermsAccepted(e.target.checked)}
+                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-gold-500"
+              />
+              <span className="text-xs leading-relaxed text-ink-600">
+                <span className="font-semibold text-ink-900">Terms &amp; Conditions:</span> I agree that my name, email, and
+                Student ID will be kept secure and confidential by The Axis Student Organization, and will only be used for
+                administrative purposes such as verifying my identity, processing my reports, and counting my votes. My
+                information will never be shared publicly without my consent.
+              </span>
+            </label>
+
             <button type="submit" className="w-full rounded-app bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800">
               Create account / sign in
             </button>
@@ -184,8 +233,9 @@ export default function Account() {
         </Card>
 
         <div className="mt-6 text-center">
-          <p className="text-xs text-ink-500">
-            By signing up, you agree to participate in The Axis polls and reports.
+          <p className="flex items-center justify-center gap-1.5 text-xs text-ink-500">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Your information is kept safe and is only used for administrative reasons.
           </p>
         </div>
       </div>
