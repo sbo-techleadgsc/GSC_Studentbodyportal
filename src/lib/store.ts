@@ -642,6 +642,26 @@ export const reportsDb = {
     return data ? toCamelReport(data) : null
   },
 
+  async findByTrackingCodeAndStudentId(code: string, studentId: string): Promise<Report | null> {
+    if (!supabase) {
+      return null
+    }
+
+    const { data, error } = await supabase
+      .from('reports')
+      .select('*')
+      .eq('tracking_code', code.trim())
+      .eq('student_id', studentId.trim())
+      .maybeSingle()
+
+    if (error) {
+      console.error('[reportsDb] Error finding report by tracking code and student ID:', error)
+      return null
+    }
+
+    return data ? toCamelReport(data) : null
+  },
+
   async submit(data: Omit<Report, 'id' | 'trackingCode' | 'status' | 'createdAt' | 'isApproved' | 'isShadowbanned'>): Promise<Report> {
     const newItem: Report = {
       ...data,
@@ -663,7 +683,7 @@ export const reportsDb = {
 
     const { error } = await supabase
       .from('reports')
-      .update({ status, admin_notes: adminNotes, updated_at: new Date().toISOString() })
+      .update({ status, admin_notes: adminNotes })
       .eq('id', id)
 
     if (error) {
@@ -678,14 +698,17 @@ export const reportsDb = {
       throw new Error('Supabase not configured')
     }
 
+    const updates: Record<string, unknown> = {
+      is_approved: true,
+      status: 'under-review',
+    }
+    if (adminReply !== undefined) {
+      updates.admin_reply = adminReply
+    }
+
     const { error } = await supabase
       .from('reports')
-      .update({ 
-        is_approved: true, 
-        status: 'under-review',
-        admin_reply: adminReply,
-        updated_at: new Date().toISOString() 
-      })
+      .update(updates)
       .eq('id', id)
 
     if (error) {
@@ -702,10 +725,7 @@ export const reportsDb = {
 
     const { error } = await supabase
       .from('reports')
-      .update({ 
-        is_shadowbanned: true,
-        updated_at: new Date().toISOString() 
-      })
+      .update({ is_shadowbanned: true })
       .eq('id', id)
 
     if (error) {
@@ -713,26 +733,6 @@ export const reportsDb = {
     }
 
     dispatchChange(KEYS.reports)
-  },
-
-  async findByTrackingCodeAndStudentId(code: string, studentId: string): Promise<Report | null> {
-    if (!supabase) {
-      return null
-    }
-
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*')
-      .eq('tracking_code', code)
-      .eq('student_id', studentId)
-      .single()
-
-    if (error) {
-      console.error('[reportsDb] Error finding report by tracking code and student ID:', error)
-      return null
-    }
-
-    return data ? toCamelReport(data) : null
   },
 }
 

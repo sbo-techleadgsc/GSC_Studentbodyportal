@@ -40,7 +40,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       {/* Sidebar (desktop) */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-navy-900/10 bg-white md:flex">
         <div className="border-b border-navy-900/10 px-5 py-5">
-          <p className="text-sm font-bold text-ink-900">SBO Admin</p>
+          <p className="text-sm font-bold text-ink-900">The Axis Admin</p>
           <p className="text-xs text-ink-400">Signed in as {adminName}</p>
         </div>
         <nav className="flex-1 space-y-1 p-3">
@@ -73,7 +73,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       {/* Mobile top bar */}
       <div className="border-b border-navy-900/10 bg-white px-4 py-3 md:hidden">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-bold text-ink-900">SBO Admin</p>
+          <p className="text-sm font-bold text-ink-900">The Axis Admin</p>
           <div className="flex items-center gap-3">
             <Link to="/" className="text-xs font-semibold text-navy-900">Public site</Link>
             <button onClick={logout} className="text-xs font-semibold text-danger-600">Log out</button>

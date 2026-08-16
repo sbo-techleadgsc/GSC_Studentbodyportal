@@ -25,12 +25,12 @@ import { formatDate } from '@/lib/format'
 import gscLogo from '@/assets/personal_assets/gsc_log_full.svg'
 
 const FEATURES = [
-  { to: '/officials', icon: Users, title: 'Elected Officials', desc: 'Meet your student body officers - their roles, backgrounds, and contact information.' },
+  { to: '/officials', icon: Users, title: 'Elected Officials', desc: 'Meet your student organization officers - their roles, backgrounds, and contact information.' },
   { to: '/promises', icon: CheckSquare, title: 'Promise Tracker', desc: 'Every campaign commitment, tracked from pending to completed, in the open.' },
   { to: '/budget', icon: DollarSign, title: 'Budget Transparency', desc: 'See exactly where the annual student org fund goes, category by category.' },
   { to: '/updates', icon: Radio, title: 'Live Updates', desc: 'Recent meetings, decisions, and org-wide announcements as they happen.' },
   { to: '/reports', icon: Flag, title: 'Student Reports', desc: 'Submit concerns publicly or anonymously, and track the status yourself.' },
-  { to: '/news', icon: Newspaper, title: 'School News', desc: 'Official announcements straight from the student body organization.' },
+  { to: '/news', icon: Newspaper, title: 'School News', desc: 'Official announcements straight from the student organization portal.' },
   { to: '/voting', icon: Vote, title: 'Public Voting', desc: 'Have a say on themes, events, and priorities - results shown live.' },
   { to: '/community', icon: MessageSquare, title: 'Community Wall', desc: 'Share your thoughts on the freedom wall - a space for positive expression and connection.' },
 ]
@@ -80,7 +80,7 @@ export default function Home() {
         <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-12 sm:pb-20 sm:pt-16">
           <div className="max-w-3xl">
             <div className="inline-flex flex-col rounded-[1.6rem] border border-white/15 bg-white/10 px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-md sm:px-6 sm:py-5">
-              <LiveBadge>Official SBO Web Portal &middot; {siteConfig.academicYear}</LiveBadge>
+              <LiveBadge>Official Student Organization Portal &middot; {siteConfig.academicYear}</LiveBadge>
 
               <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
                 {siteConfig.schoolName}

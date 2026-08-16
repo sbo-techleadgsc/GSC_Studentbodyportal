@@ -1,6 +1,7 @@
 import { NavLink, Link } from 'react-router-dom'
 import { NAV_ITEMS } from '@/lib/nav'
 import { clsx } from '@/lib/clsx'
+import { siteConfig } from '@/config/site'
 import gscLogo from '@/assets/personal_assets/gsc_logo_favicon.svg'
 
 export function TopNav() {
@@ -12,7 +13,7 @@ export function TopNav() {
             <img src={gscLogo} alt="" className="h-6 w-6 rounded-full object-contain" />
           </span>
           <span className="text-[15px] font-bold leading-tight text-white transition-all duration-300 ease-out">
-            GSC Student Council
+            {siteConfig.orgShortName}
           </span>
         </Link>
 

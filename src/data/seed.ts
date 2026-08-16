@@ -16,13 +16,13 @@ export const seedOfficers: Officer[] = [
   {
     id: 'off-1',
     name: 'Maria Santos',
-    position: 'Student Body President',
+    position: 'Student Organization President',
     order: 1,
     year: '4th Year',
     major: 'BS Nursing',
     email: 'maria.santos@gsc.edu.ph',
     photoUrl: photo('Maria Santos'),
-    bio: 'Leading this year\'s SBO with a focus on transparency and student welfare. Previously PIO Officer AY 2024-2025.',
+    bio: 'Leading The Axis with a focus on transparency and student welfare. Previously PIO Officer AY 2024-2025.',
   },
   {
     id: 'off-2',
@@ -283,7 +283,7 @@ export const seedReports: Report[] = [
 export const seedNews: NewsPost[] = [
   {
     id: 'news-1',
-    title: 'GSC Launches New Online Grievance Portal',
+    title: 'The Axis Launches New Online Grievance Portal',
     category: 'Announcement',
     content: 'Starting August 1, students can submit concerns through the digital portal in the Reports tab - public or anonymous, your choice.',
     date: '2026-07-26',

@@ -185,7 +185,7 @@ export default function Account() {
 
         <div className="mt-6 text-center">
           <p className="text-xs text-ink-500">
-            By signing up, you agree to participate in GSC Student Council polls and reports.
+            By signing up, you agree to participate in The Axis polls and reports.
           </p>
         </div>
       </div>
