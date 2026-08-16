@@ -6,7 +6,7 @@ import { Modal } from '@/components/ui/Modal'
 import { ImageUpload } from '@/components/ui/ImageUpload'
 import { useLiveData } from '@/lib/hooks'
 import { eventsDb } from '@/lib/store'
-import { formatDate } from '@/lib/format'
+import { formatDate, localDateKey } from '@/lib/format'
 import type { EventCategory, ScheduledEvent } from '@/lib/types'
 
 const emptyForm = {
@@ -14,7 +14,7 @@ const emptyForm = {
   category: 'School' as EventCategory,
   description: '',
   location: '',
-  startDate: new Date().toISOString().slice(0, 10),
+  startDate: localDateKey(),
   endDate: '',
   startTime: '',
   endTime: '',

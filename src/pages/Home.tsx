@@ -21,7 +21,7 @@ import { siteConfig } from '@/config/site'
 import { useLiveData } from '@/lib/hooks'
 import { officersDb, promisesDb, budgetDb, newsDb, pollsDb, updatesDb, eventsDb } from '@/lib/store'
 import { pesoCompact } from '@/lib/format'
-import { formatDate } from '@/lib/format'
+import { formatDate, localDateKey } from '@/lib/format'
 import gscLogo from '@/assets/personal_assets/gsc_log_full.svg'
 
 const FEATURES = [
@@ -55,7 +55,7 @@ export default function Home() {
   const openPolls = polls?.filter((p) => p.isOpen) ?? []
   const featuredPoll = openPolls[0]
   const featuredPollTotal = featuredPoll?.options.reduce((s, o) => s + o.votes, 0) ?? 0
-  const todayKey = new Date().toISOString().slice(0, 10)
+  const todayKey = localDateKey()
   const upcomingEvents = (events ?? [])
     .filter((e) => !e.endDate || e.endDate >= todayKey)
     .sort((a, b) => a.startDate.localeCompare(b.startDate))

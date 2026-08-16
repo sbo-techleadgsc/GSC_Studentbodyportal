@@ -6,7 +6,7 @@ import { Card, Badge, Button, EmptyState } from '@/components/ui/Primitives'
 import { Modal } from '@/components/ui/Modal'
 import { useLiveData } from '@/lib/hooks'
 import { eventsDb, pollsDb } from '@/lib/store'
-import { formatDate } from '@/lib/format'
+import { formatDate, localDateKey } from '@/lib/format'
 import { clsx } from '@/lib/clsx'
 import type { EventCategory, ScheduledEvent } from '@/lib/types'
 
@@ -57,7 +57,7 @@ export default function Events() {
   const year = cursor.getUTCFullYear()
   const month = cursor.getUTCMonth()
   const cells = buildMonth(year, month)
-  const todayKey = toKey(today)
+  const todayKey = localDateKey(today)
 
   const eventsByDay = new Map<string, ScheduledEvent[]>()
   events?.forEach((event) => {
