@@ -83,7 +83,7 @@ function NewsForm({ initial, onClose }: { initial: NewsPost | typeof emptyForm; 
     <Modal title={'id' in form ? 'Edit News' : 'Post News'} onClose={onClose}>
       <div className="space-y-4">
         <Field label="Title">
-          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="GSC Launches New Online Grievance Portal" />
+          <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="The Axis Launches New Online Grievance Portal" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Category">

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { siteConfig } from '@/config/site'
 
 export function PageHero({
   title,
@@ -19,7 +20,7 @@ export function PageHero({
       />
       <div className="relative mx-auto max-w-6xl px-6 pb-8 pt-8 sm:pb-10 sm:pt-10">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-navy-100/60">
-          Student Body Organization
+          {siteConfig.schoolName} &middot; {siteConfig.orgName}
         </p>
         <h1 className="mt-1.5 text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
           {title}

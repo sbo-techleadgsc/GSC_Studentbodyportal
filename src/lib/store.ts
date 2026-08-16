@@ -631,7 +631,7 @@ export const reportsDb = {
 
     const { error } = await supabase
       .from('reports')
-      .update({ status, admin_notes: adminNotes, updated_at: new Date().toISOString() })
+      .update({ status, admin_notes: adminNotes })
       .eq('id', id)
 
     if (error) {
@@ -639,68 +639,6 @@ export const reportsDb = {
     }
 
     dispatchChange(KEYS.reports)
-  },
-
-  async approve(id: string, adminReply?: string): Promise<void> {
-    if (!supabase) {
-      throw new Error('Supabase not configured')
-    }
-
-    const { error } = await supabase
-      .from('reports')
-      .update({ 
-        is_approved: true, 
-        status: 'under-review',
-        admin_reply: adminReply,
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', id)
-
-    if (error) {
-      throw new Error(`Failed to approve report: ${error.message}`)
-    }
-
-    dispatchChange(KEYS.reports)
-  },
-
-  async shadowban(id: string): Promise<void> {
-    if (!supabase) {
-      throw new Error('Supabase not configured')
-    }
-
-    const { error } = await supabase
-      .from('reports')
-      .update({ 
-        is_shadowbanned: true,
-        updated_at: new Date().toISOString() 
-      })
-      .eq('id', id)
-
-    if (error) {
-      throw new Error(`Failed to shadowban report: ${error.message}`)
-    }
-
-    dispatchChange(KEYS.reports)
-  },
-
-  async findByTrackingCodeAndStudentId(code: string, studentId: string): Promise<Report | null> {
-    if (!supabase) {
-      return null
-    }
-
-    const { data, error } = await supabase
-      .from('reports')
-      .select('*')
-      .eq('tracking_code', code)
-      .eq('student_id', studentId)
-      .single()
-
-    if (error) {
-      console.error('[reportsDb] Error finding report by tracking code and student ID:', error)
-      return null
-    }
-
-    return data ? toCamelReport(data) : null
   },
 }
 

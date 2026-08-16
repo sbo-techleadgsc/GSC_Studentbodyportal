@@ -5,19 +5,19 @@
 // ─────────────────────────────────────────────────────────────
 
 export const siteConfig = {
-  schoolName: 'Good Samaritan Colleges',
-  orgName: 'Student Body Organization',
-  orgShortName: 'GSC Student Council',
+  schoolName: 'The Axis',
+  orgName: 'Student Organization Portal',
+  orgShortName: 'The Axis',
   academicYear: 'AY 2026-2027',
   tagline:
     'Your central hub for student governance - where transparency meets action. Every official, every promise, every peso, every decision, all in one place, open to you.',
 
   // Update with your own name/role before launch.
   creatorName: 'Crisanto T. Viray',
-  creatorRole: 'SBO Tech Lead & PIO',
+  creatorRole: 'Tech Lead & PIO',
   creditBlurb:
-    'Conceptualized, designed, and developed in service of every Good Samaritan student. Built to keep governance open, accountable, and within reach.',
+    'Conceptualized, designed, and developed in service of students. Built to keep governance open, accountable, and within reach.',
 
   contactEmail: 'sbo@gsc.edu.ph',
-  domain: 'gsc-sbo.com', // placeholder — replace once you buy your domain
+  domain: 'axis-portal.com', // placeholder — replace once you buy your domain
 }

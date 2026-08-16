@@ -80,7 +80,7 @@ function OfficerForm({ initial, onClose }: { initial: Officer | typeof emptyForm
           <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Maria Santos" />
         </Field>
         <Field label="Position">
-          <Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="Student Body President" />
+          <Input value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} placeholder="Student Organization President" />
         </Field>
         <div className="grid grid-cols-2 gap-4">
           <Field label="Year">

@@ -25,7 +25,7 @@ export default function Maintenance() {
             Under Maintenance
           </h1>
           <p className="text-slate-600 mb-8 leading-relaxed">
-            The GSC Student Council portal is currently undergoing scheduled maintenance. 
+            The Axis - Student Organization Portal is currently undergoing scheduled maintenance. 
             We're working hard to improve your experience and will be back shortly.
           </p>
 
@@ -52,7 +52,7 @@ export default function Maintenance() {
           {/* Footer */}
           <div className="mt-8 pt-6 border-t border-slate-100">
             <p className="text-xs text-slate-400">
-              © 2026 GSC Student Council. All rights reserved.
+              © 2026 The Axis - Student Organization Portal. All rights reserved.
             </p>
           </div>
         </div>
@@ -62,7 +62,7 @@ export default function Maintenance() {
           <p className="text-sm text-slate-500">
             Need help? Contact the{' '}
             <a href="mailto:sbo@gsc.edu.ph" className="text-slate-600 hover:text-slate-800 font-medium underline">
-              Student Council Office
+              Student Organization Office
             </a>
           </p>
         </div>

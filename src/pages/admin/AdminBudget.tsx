@@ -65,8 +65,7 @@ function BudgetForm({ initial, onClose }: { initial: BudgetItem | typeof emptyFo
     if (!form.category) return
     setSaving(true)
     try {
-      const itemToSave = 'id' in form ? form : { ...form, id: crypto.randomUUID() }
-      await budgetDb.upsert(itemToSave)
+      await budgetDb.upsert(form)
       onClose()
     } catch (error) {
       console.error('Failed to save budget item:', error)

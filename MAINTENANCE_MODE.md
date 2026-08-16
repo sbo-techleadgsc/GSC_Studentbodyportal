@@ -1,6 +1,6 @@
 # Maintenance Mode
 
-The GSC Student Council portal includes a global maintenance mode feature that can be triggered via a Vercel environment variable.
+The Axis - Student Organization Portal includes a global maintenance mode feature that can be triggered via a Vercel environment variable.
 
 ## How to Enable Maintenance Mode
 
