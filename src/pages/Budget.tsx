@@ -52,9 +52,9 @@ export default function Budget() {
             <p className="mt-1 text-xs text-ink-400">Annual allocation</p>
           </Card>
           <Card className="bg-navy-900 p-6">
-            <p className="text-sm text-navy-100/70">Total Spent</p>
+            <p className="text-sm text-navy-100/80">Total Spent</p>
             <p className="mt-1 text-3xl font-extrabold text-white">{peso(totals.spent)}</p>
-            <p className="mt-1 text-xs text-navy-100/60">{totals.pct}% utilized</p>
+            <p className="mt-1 text-xs text-navy-100/80">{totals.pct}% utilized</p>
           </Card>
         </div>
 

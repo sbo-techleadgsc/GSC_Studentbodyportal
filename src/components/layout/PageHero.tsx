@@ -15,7 +15,7 @@ export function PageHero({
   return (
     <div className="border-b border-navy-900/5 bg-surface">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-navy-900/60">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-navy-900/80">
           {siteConfig.schoolName} &middot; {siteConfig.orgName}
         </p>
         <h1 className="mt-1.5 text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">

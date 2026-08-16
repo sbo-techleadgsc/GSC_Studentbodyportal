@@ -14,6 +14,7 @@ import Budget from '@/pages/Budget'
 import Updates from '@/pages/Updates'
 import Reports from '@/pages/Reports'
 import News from '@/pages/News'
+import NewsArticle from '@/pages/NewsArticle'
 import Events from '@/pages/Events'
 import Voting from '@/pages/Voting'
 import Community from '@/pages/Community'
@@ -72,6 +73,7 @@ function AppContent() {
         <Route path="/updates" element={<PublicLayout><Updates /></PublicLayout>} />
         <Route path="/reports" element={<PublicLayout><Reports /></PublicLayout>} />
         <Route path="/news" element={<PublicLayout><News /></PublicLayout>} />
+        <Route path="/news/:id" element={<PublicLayout><NewsArticle /></PublicLayout>} />
         <Route path="/events" element={<PublicLayout><Events /></PublicLayout>} />
         <Route path="/voting" element={<PublicLayout><Voting /></PublicLayout>} />
         <Route path="/community" element={<PublicLayout><Community /></PublicLayout>} />

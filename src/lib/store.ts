@@ -297,6 +297,7 @@ function toCamelNewsPost(row: any): NewsPost {
     title: row.title,
     category: row.category,
     content: row.content,
+    imageUrl: row.image_url ?? row.imageUrl ?? undefined,
     date: row.date,
   }
 }
@@ -307,6 +308,7 @@ function toSnakeNewsPost(row: NewsPost): Record<string, unknown> {
     title: row.title,
     category: row.category,
     content: row.content,
+    image_url: row.imageUrl,
     date: row.date,
   }
 }

@@ -1,4 +1,5 @@
 import { Clock, Newspaper } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { PageHero } from '@/components/layout/PageHero'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Card, Badge, EmptyState } from '@/components/ui/Primitives'
@@ -31,19 +32,22 @@ export default function News() {
 
         <div className="mt-8 grid gap-5 sm:grid-cols-2">
           {news?.map((n) => (
-            <Card key={n.id} className="overflow-hidden">
-              {n.imageUrl && <img src={n.imageUrl} alt={n.title} className="h-44 w-full object-cover" />}
-              <div className="p-6">
-                <div className="flex items-center justify-between gap-2">
-                  <Badge tone="navy">{n.category}</Badge>
-                  <span className="flex items-center gap-1 text-xs text-ink-400">
-                    <Clock className="h-3.5 w-3.5" /> {formatDate(n.date)}
-                  </span>
+            <Link key={n.id} to={`/news/${n.id}`} className="group">
+              <Card className="h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99]">
+                {n.imageUrl && <img src={n.imageUrl} alt={n.title} className="h-44 w-full object-cover" />}
+                <div className="p-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge tone="navy">{n.category}</Badge>
+                    <span className="flex items-center gap-1 text-xs text-ink-400">
+                      <Clock className="h-3.5 w-3.5" /> {formatDate(n.date)}
+                    </span>
+                  </div>
+                  <p className="mt-3 font-bold leading-snug text-ink-900">{n.title}</p>
+                  <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-ink-600">{n.content}</p>
+                  <p className="mt-3 text-sm font-semibold text-navy-900 group-hover:underline">Read more &rarr;</p>
                 </div>
-                <p className="mt-3 font-bold leading-snug text-ink-900">{n.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-ink-600">{n.content}</p>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>

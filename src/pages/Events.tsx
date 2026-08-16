@@ -139,7 +139,7 @@ export default function Events() {
                           ? 'flex h-5 w-5 items-center justify-center rounded-full bg-navy-900 text-white'
                           : inMonth
                             ? 'text-ink-600'
-                            : 'text-ink-400/60'
+                            : 'text-ink-400'
                       )}
                     >
                       {date.getUTCDate()}

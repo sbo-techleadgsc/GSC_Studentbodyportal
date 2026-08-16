@@ -84,7 +84,7 @@ export function StatusPill({ status }: { status: 'pending' | 'in-progress' | 'co
 export function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] text-navy-900/60">{eyebrow}</p>
+      <p className="text-xs font-bold uppercase tracking-[0.14em] text-navy-900/80">{eyebrow}</p>
       <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">{title}</h1>
       {subtitle && <p className="mt-2 max-w-xl text-ink-600">{subtitle}</p>}
     </div>
