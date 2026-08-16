@@ -19,9 +19,9 @@ export default function AdminLogin() {
     setError('')
     setMessage('')
 
-    const ok = await login(email, password)
-    if (!ok) {
-      setError('Incorrect email or password. Use a valid Supabase admin account.')
+    const err = await login(email, password)
+    if (err) {
+      setError(`Sign-in failed: ${err}`)
       return
     }
 

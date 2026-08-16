@@ -94,9 +94,9 @@ export default function Account() {
       return
     }
 
-    const ok = await signUpPublicUser(email, password, isAdminAccount ? undefined : normalizeStudentId(studentId))
-    if (!ok) {
-      setAuthError('We could not sign you in. Please check your email and password, or try again later.')
+    const err = await signUpPublicUser(email, password, isAdminAccount ? undefined : normalizeStudentId(studentId))
+    if (err) {
+      setAuthError(`Sign-in failed: ${err}`)
       return
     }
 

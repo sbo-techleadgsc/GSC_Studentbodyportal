@@ -26,6 +26,6 @@ export const siteConfig = {
   creditBlurb:
     'Conceptualized, designed, and developed in service of students. Built to keep governance open, accountable, and within reach.',
 
-  contactEmail: 'sbo@gsc.edu.ph',
-  domain: 'axis-portal.com', // placeholder — replace once you buy your domain
+  contactEmail: 'gsc.sbofficial@gmail.com',
+  domain: 'gsc-jhsstudentbody-org.vercel.app',
 }

@@ -14,9 +14,9 @@ interface AdminAuthValue {
   isAdmin: boolean
   isAuthenticated: boolean
   adminName: string | null
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<string | null>
   requestMagicLink: (email: string) => Promise<boolean>
-  signUpPublicUser: (email: string, password: string, studentId?: string) => Promise<boolean>
+  signUpPublicUser: (email: string, password: string, studentId?: string) => Promise<string | null>
   isAdminEmail: (email: string) => Promise<boolean>
   logout: () => void
 }
@@ -75,19 +75,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string) => {
-    if (!supabase) return false
+  const login = async (email: string, password: string): Promise<string | null> => {
+    if (!supabase) return 'Supabase is not configured on this environment.'
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password: password.trim(),
     })
     if (error) {
       console.error('[login] Error:', error.message)
-      return false
+      return error.message
     }
     // onAuthStateChange fires automatically and calls applySession —
     // no manual state-setting here, so nothing can shortcut the admin check.
-    return true
+    return null
   }
 
   const requestMagicLink = async (email: string) => {
@@ -111,8 +111,8 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // but it will NEVER be an admin unless you add them to the admins
   // table yourself. isAdmin is derived fresh by applySession(), not
   // set here.
-  const signUpPublicUser = async (email: string, password: string, studentId?: string) => {
-    if (!supabase) return false
+  const signUpPublicUser = async (email: string, password: string, studentId?: string): Promise<string | null> => {
+    if (!supabase) return 'Supabase is not configured on this environment.'
     const { error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: password.trim(),
@@ -120,9 +120,9 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     })
     if (error) {
       console.error('[signUpPublicUser] Error:', error.message)
-      return false
+      return error.message
     }
-    return true
+    return null
   }
 
   const logout = () => {

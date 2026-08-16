@@ -1,4 +1,4 @@
-# The Axis - Student Organization Portal
+# The Axis - Student Body Organization
 
 A transparent student organization web portal — officials, campaign
 promise tracking, budget transparency, live updates, student reports

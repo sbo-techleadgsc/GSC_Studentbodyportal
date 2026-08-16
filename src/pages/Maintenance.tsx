@@ -37,7 +37,7 @@ export default function Maintenance() {
             </div>
             <div className="flex items-center justify-center gap-3 text-sm text-slate-500">
               <Mail className="h-4 w-4" />
-              <span>For urgent matters: sbo@gsc.edu.ph</span>
+              <span>For urgent matters: gsc.sbofficial@gmail.com</span>
             </div>
           </div>
 
@@ -61,7 +61,7 @@ export default function Maintenance() {
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-500">
             Need help? Contact the{' '}
-            <a href="mailto:sbo@gsc.edu.ph" className="text-slate-600 hover:text-slate-800 font-medium underline">
+            <a href="mailto:gsc.sbofficial@gmail.com" className="text-slate-600 hover:text-slate-800 font-medium underline">
               Student Body Organization Office
             </a>
           </p>
