@@ -106,7 +106,8 @@ export default function Events() {
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-7 gap-px overflow-hidden rounded-app border border-navy-900/10 bg-navy-900/10">
+            <div className="mt-5 overflow-x-auto pb-1">
+              <div className="grid min-w-[520px] grid-cols-7 gap-px overflow-hidden rounded-app border border-navy-900/10 bg-navy-900/10 sm:min-w-0">
               {WEEKDAYS.map((day) => (
                 <div key={day} className="bg-white px-1 py-2 text-center text-[10px] font-bold uppercase tracking-wider text-ink-400 sm:text-xs">
                   {day}
@@ -125,10 +126,10 @@ export default function Events() {
                     disabled={dayEvents.length === 0}
                     onClick={() => setSelectedDay(key)}
                     className={clsx(
-                      'flex min-h-16 flex-col gap-1 p-1 text-left sm:min-h-20 sm:p-1.5',
+                      'flex min-h-14 flex-col gap-1 p-1 text-left sm:min-h-20 sm:p-1.5',
                       inMonth ? 'bg-white' : 'bg-surface-muted/50',
                       isToday && 'ring-2 ring-inset ring-gold-400',
-                      dayEvents.length > 0 ? 'cursor-pointer hover:bg-navy-50' : 'cursor-default'
+                      dayEvents.length > 0 ? 'cursor-pointer transition-colors hover:bg-navy-50 active:bg-navy-100' : 'cursor-default'
                     )}
                   >
                     <span
@@ -167,6 +168,7 @@ export default function Events() {
                   </button>
                 )
               })}
+              </div>
             </div>
 
             <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -191,7 +193,7 @@ export default function Events() {
 
             <div className="mt-4 space-y-3">
               {upcoming.map((event) => (
-                <Card key={event.id} className="cursor-pointer p-4" onClick={() => setSelectedEvent(event)}>
+                <Card key={event.id} className="cursor-pointer p-4 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]" onClick={() => setSelectedEvent(event)}>
                   <Badge tone={CATEGORY_TONE[event.category]}>{event.category}</Badge>
                   <p className="mt-2 font-bold leading-snug text-ink-900">{event.title}</p>
                   <p className="mt-1 text-xs text-ink-400">{formatDate(event.startDate)}</p>
@@ -250,7 +252,7 @@ function DayModal({
             key={event.id}
             type="button"
             onClick={() => onSelectEvent(event)}
-            className="w-full rounded-app border border-navy-900/10 bg-surface p-4 text-left transition-colors hover:bg-navy-50"
+            className="w-full rounded-app border border-navy-900/10 bg-surface p-4 text-left transition-all duration-200 hover:bg-navy-50 active:scale-[0.98]"
           >
             <div className="flex items-center justify-between gap-2">
               <p className="font-bold text-ink-900">{event.title}</p>

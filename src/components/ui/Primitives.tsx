@@ -22,7 +22,7 @@ export function Button({ variant = 'primary', size = 'md', className, ...props }
   return (
     <button
       className={clsx(
-        'inline-flex items-center justify-center gap-2 rounded-app font-semibold transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center justify-center gap-2 rounded-app font-semibold transition-all duration-200 active:scale-[0.96] disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100',
         size === 'md' ? 'px-5 py-2.5 text-sm' : 'px-3.5 py-1.5 text-xs',
         variantClasses[variant],
         className

@@ -13,7 +13,7 @@ export function BottomNav() {
             end={to === '/'}
             className={({ isActive }) =>
               clsx(
-                'relative flex min-w-[64px] flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-semibold transition-all duration-300 ease-out transform',
+                'relative flex min-w-[56px] flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-semibold transition-all duration-200 ease-out transform active:scale-90',
                 isActive ? 'text-navy-900 scale-110' : 'text-ink-400 hover:scale-105'
               )
             }
@@ -22,7 +22,7 @@ export function BottomNav() {
               <>
                 <span className="relative">
                   <Icon
-                    className="h-5 w-5 transition-all duration-300 ease-out"
+                    className="h-5 w-5 transition-all duration-200 ease-out"
                     strokeWidth={isActive ? 2.4 : 2}
                   />
                   {isActive && (

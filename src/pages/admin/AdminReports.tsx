@@ -47,7 +47,7 @@ export default function AdminReports() {
             key={key}
             onClick={() => setFilter(key)}
             className={clsx(
-              'shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+              'shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 active:scale-95',
               filter === key ? 'bg-navy-900 text-white' : 'bg-white text-ink-600 hover:bg-navy-50'
             )}
           >

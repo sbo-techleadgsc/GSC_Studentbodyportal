@@ -51,7 +51,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               end={end}
               className={({ isActive }) =>
                 clsx(
-                  'flex items-center gap-2.5 rounded-app px-3 py-2 text-sm font-semibold transition-colors',
+                  'flex items-center gap-2.5 rounded-app px-3 py-2 text-sm font-semibold transition-all duration-200 active:scale-[0.97]',
                   isActive ? 'bg-navy-900 text-white' : 'text-ink-600 hover:bg-navy-50'
                 )
               }
@@ -87,7 +87,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               end={end}
               className={({ isActive }) =>
                 clsx(
-                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors',
+                  'shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-all duration-200 active:scale-95',
                   isActive ? 'bg-navy-900 text-white' : 'bg-surface-muted text-ink-600'
                 )
               }

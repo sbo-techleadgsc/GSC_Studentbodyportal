@@ -67,20 +67,16 @@ export default function Home() {
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
         className="relative overflow-hidden rounded-3xl mx-4 sm:mx-6 mt-4 sm:mt-6"
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat blur-[1px] rounded-3xl"
-          style={{ backgroundImage: `url(${gscLogo})` }}
-        >
-          <div className="absolute inset-0 bg-navy-900/65 rounded-3xl" />
-        </div>
+        <div className="absolute inset-0 bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 rounded-3xl" />
+        <div className="pointer-events-none absolute -left-24 -bottom-32 h-96 w-96 rounded-full bg-gold-400/15 blur-3xl" aria-hidden />
         <div className="cross-emblem pointer-events-none absolute -right-16 -top-10 h-96 w-96 bg-white/[0.05] sm:h-[28rem] sm:w-[28rem]" aria-hidden />
-        <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-12 sm:pb-20 sm:pt-16">
+        <div className="relative mx-auto max-w-6xl px-6 pb-14 pt-12 sm:pb-16 sm:pt-14 lg:flex lg:items-center lg:gap-14">
           <div className="max-w-3xl">
             <div className="inline-flex flex-col rounded-[1.6rem] border border-white/15 bg-white/10 px-4 py-4 shadow-[0_10px_30px_rgba(0,0,0,0.2)] backdrop-blur-md sm:px-6 sm:py-5">
-              <LiveBadge>Official Student Organization Portal &middot; {siteConfig.academicYear}</LiveBadge>
+              <LiveBadge>Official SBO Web Portal &middot; {siteConfig.academicYear}</LiveBadge>
 
               <h1 className="mt-6 text-4xl font-extrabold leading-[1.08] tracking-tight text-white sm:text-5xl lg:text-6xl">
                 {siteConfig.schoolName}
@@ -97,7 +93,7 @@ export default function Home() {
               <Link to="/officials" className="w-full sm:w-[calc(50%-0.5rem)]">
                 <Button
                   variant="secondary"
-                  className="w-full justify-between rounded-[1.15rem] border border-white/20 bg-white/15 px-4 py-3.5 text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:bg-white/25"
+                  className="w-full justify-between rounded-[1.15rem] border border-white/20 bg-white/15 px-4 py-3.5 text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/25 active:scale-[0.98]"
                 >
                   <span className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
@@ -109,7 +105,7 @@ export default function Home() {
               <Link to="/reports" className="w-full sm:w-[calc(50%-0.5rem)]">
                 <Button
                   variant="ghost"
-                  className="w-full justify-between rounded-[1.15rem] border border-white/30 !bg-white/20 px-4 py-3.5 !text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:!bg-white/30"
+                  className="w-full justify-between rounded-[1.15rem] border border-white/30 !bg-white/20 px-4 py-3.5 !text-white shadow-[0_10px_25px_rgba(0,0,0,0.16)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:!bg-white/30 active:scale-[0.98]"
                 >
                   <span className="flex items-center gap-2">
                     <Flag className="h-4 w-4" />
@@ -120,6 +116,18 @@ export default function Home() {
               </Link>
             </div>
           </div>
+
+          {/* Logo lockup — properly sized, not stretched as a background */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+            className="mt-10 flex justify-center lg:mt-0 lg:flex-1 lg:justify-end"
+          >
+            <div className="w-52 rounded-2xl bg-white p-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] sm:w-64 sm:p-4 lg:w-72">
+              <img src={gscLogo} alt={`${siteConfig.schoolName} logo`} className="h-auto w-full rounded-xl" />
+            </div>
+          </motion.div>
         </div>
       </motion.div>
 
