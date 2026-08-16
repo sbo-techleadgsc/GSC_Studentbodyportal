@@ -24,6 +24,7 @@ import type {
   PollOption,
   FreedomMessage,
   NoteColor,
+  ScheduledEvent,
 } from './types'
 import { supabase } from './supabase'
 
@@ -34,6 +35,7 @@ const KEYS = {
   updates: 'sbo_updates',
   reports: 'sbo_reports',
   news: 'sbo_news',
+  events: 'sbo_events',
   polls: 'sbo_polls',
   votedPolls: 'sbo_voted_polls',
   freedomWall: 'sbo_freedom_wall',
@@ -306,6 +308,36 @@ function toSnakeNewsPost(row: NewsPost): Record<string, unknown> {
     category: row.category,
     content: row.content,
     date: row.date,
+  }
+}
+
+function toCamelEvent(row: any): ScheduledEvent {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    location: row.location,
+    startDate: row.start_date ?? row.startDate,
+    endDate: row.end_date ?? row.endDate ?? undefined,
+    startTime: row.start_time ?? row.startTime ?? undefined,
+    endTime: row.end_time ?? row.endTime ?? undefined,
+    imageUrl: row.image_url ?? row.imageUrl ?? undefined,
+  }
+}
+
+function toSnakeEvent(row: ScheduledEvent): Record<string, unknown> {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    location: row.location,
+    start_date: row.startDate,
+    end_date: row.endDate,
+    start_time: row.startTime,
+    end_time: row.endTime,
+    image_url: row.imageUrl,
   }
 }
 
@@ -755,6 +787,60 @@ export const newsDb = {
     }
 
     dispatchChange(KEYS.news)
+  },
+}
+
+// ── Events (calendar) ───────────────────────────────────────
+export const eventsDb = {
+  async list(): Promise<ScheduledEvent[]> {
+    if (!supabase) {
+      return []
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_date', { ascending: true })
+
+    if (error) {
+      console.error('[eventsDb] Error fetching events:', error)
+      return []
+    }
+
+    return (data ?? []).map(toCamelEvent)
+  },
+
+  async upsert(item: ScheduledEvent): Promise<ScheduledEvent> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .upsert(toSnakeEvent(item), { onConflict: 'id' })
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to upsert event: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.events)
+    return toCamelEvent(data)
+  },
+
+  async remove(id: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase.from('events').delete().eq('id', id)
+
+    if (error) {
+      throw new Error(`Failed to remove event: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.events)
   },
 }
 

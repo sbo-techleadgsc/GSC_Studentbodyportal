@@ -14,6 +14,7 @@ import Budget from '@/pages/Budget'
 import Updates from '@/pages/Updates'
 import Reports from '@/pages/Reports'
 import News from '@/pages/News'
+import Events from '@/pages/Events'
 import Voting from '@/pages/Voting'
 import Community from '@/pages/Community'
 import Account from '@/pages/Account'
@@ -26,6 +27,7 @@ import AdminBudget from '@/pages/admin/AdminBudget'
 import AdminUpdates from '@/pages/admin/AdminUpdates'
 import AdminReports from '@/pages/admin/AdminReports'
 import AdminNews from '@/pages/admin/AdminNews'
+import AdminEvents from '@/pages/admin/AdminEvents'
 import AdminPolls from '@/pages/admin/AdminPolls'
 import AdminCommunity from '@/pages/admin/AdminCommunity'
 import NotFound from '@/pages/NotFound'
@@ -70,6 +72,7 @@ function AppContent() {
         <Route path="/updates" element={<PublicLayout><Updates /></PublicLayout>} />
         <Route path="/reports" element={<PublicLayout><Reports /></PublicLayout>} />
         <Route path="/news" element={<PublicLayout><News /></PublicLayout>} />
+        <Route path="/events" element={<PublicLayout><Events /></PublicLayout>} />
         <Route path="/voting" element={<PublicLayout><Voting /></PublicLayout>} />
         <Route path="/community" element={<PublicLayout><Community /></PublicLayout>} />
         <Route path="/account" element={<PublicLayout><Account /></PublicLayout>} />
@@ -83,6 +86,7 @@ function AppContent() {
         <Route path="/admin/updates" element={<AdminGuard><AdminUpdates /></AdminGuard>} />
         <Route path="/admin/reports" element={<AdminGuard><AdminReports /></AdminGuard>} />
         <Route path="/admin/news" element={<AdminGuard><AdminNews /></AdminGuard>} />
+        <Route path="/admin/events" element={<AdminGuard><AdminEvents /></AdminGuard>} />
         <Route path="/admin/polls" element={<AdminGuard><AdminPolls /></AdminGuard>}/>
         <Route path="/admin/settings" element={<AdminGuard><AdminSettings /></AdminGuard>} />
         <Route path="/admin/community" element={<AdminGuard><AdminCommunity /></AdminGuard>} />

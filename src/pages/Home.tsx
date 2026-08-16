@@ -7,6 +7,7 @@ import {
   DollarSign,
   Radio,
   Newspaper,
+  CalendarDays,
   Vote,
   ShieldCheck,
   HeartHandshake,
@@ -18,7 +19,7 @@ import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Button, Card, Badge, StatusPill } from '@/components/ui/Primitives'
 import { siteConfig } from '@/config/site'
 import { useLiveData } from '@/lib/hooks'
-import { officersDb, promisesDb, budgetDb, newsDb, pollsDb, updatesDb } from '@/lib/store'
+import { officersDb, promisesDb, budgetDb, newsDb, pollsDb, updatesDb, eventsDb } from '@/lib/store'
 import { pesoCompact } from '@/lib/format'
 import { formatDate } from '@/lib/format'
 import gscLogo from '@/assets/personal_assets/gsc_log_full.svg'
@@ -47,12 +48,18 @@ export default function Home() {
   const [news] = useLiveData(newsDb.list)
   const [polls] = useLiveData(pollsDb.list)
   const [updates] = useLiveData(updatesDb.list)
+  const [events] = useLiveData(eventsDb.list)
 
   const totalBudget = budget?.reduce((s, b) => s + b.allocated, 0) ?? 0
   const activePromises = promises?.filter((p) => p.status !== 'completed').length ?? 0
   const openPolls = polls?.filter((p) => p.isOpen) ?? []
   const featuredPoll = openPolls[0]
   const featuredPollTotal = featuredPoll?.options.reduce((s, o) => s + o.votes, 0) ?? 0
+  const todayKey = new Date().toISOString().slice(0, 10)
+  const upcomingEvents = (events ?? [])
+    .filter((e) => !e.endDate || e.endDate >= todayKey)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate))
+    .slice(0, 2)
 
   return (
     <div>
@@ -127,7 +134,29 @@ export default function Home() {
           <h2 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">At a Glance</h2>
           <p className="mt-2 text-ink-600">The latest from your student government, updated live.</p>
 
-          <div className="mt-8 grid gap-5 responsive-grid lg:grid-cols-3">
+          <div className="mt-8 grid gap-5 responsive-grid sm:grid-cols-2 lg:grid-cols-4">
+            {/* Upcoming events */}
+            <Card className="p-6 rounded-2xl">
+              <div className="flex items-center justify-between">
+                <p className="font-bold text-ink-900">Upcoming Events</p>
+                <Link to="/events" className="text-xs font-semibold text-navy-900 hover:underline">View calendar</Link>
+              </div>
+              <div className="mt-4 space-y-4">
+                {upcomingEvents.length === 0 && (
+                  <p className="text-sm text-ink-400">No events on the calendar yet.</p>
+                )}
+                {upcomingEvents.map((e) => (
+                  <div key={e.id} className="border-t border-navy-900/5 pt-4 first:border-0 first:pt-0">
+                    <Badge tone={e.category === 'School' ? 'navy' : e.category === 'Organization' ? 'gold' : 'success'}>{e.category}</Badge>
+                    <p className="mt-2 text-sm font-semibold leading-snug text-ink-900">{e.title}</p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-ink-400">
+                      <CalendarDays className="h-3 w-3" /> {formatDate(e.startDate)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
             {/* Latest news */}
             <Card className="p-6 rounded-2xl">
               <div className="flex items-center justify-between">

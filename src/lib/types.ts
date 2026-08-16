@@ -28,6 +28,7 @@ export type UpdateCategory =
   | 'Event'
   | 'Policy'
 export type NewsCategory = 'Announcement' | 'Events' | 'Update'
+export type EventCategory = 'School' | 'Organization' | 'Assembly' | 'Other'
 export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'orange'
 
 export interface Officer {
@@ -100,6 +101,19 @@ export interface NewsPost {
   content: string
   imageUrl?: string
   date: string
+}
+
+export interface ScheduledEvent {
+  id: string
+  title: string
+  description?: string
+  category: EventCategory
+  location?: string
+  startDate: string // YYYY-MM-DD
+  endDate?: string // YYYY-MM-DD (inclusive, for multi-day events)
+  startTime?: string
+  endTime?: string
+  imageUrl?: string
 }
 
 export interface PollOption {
