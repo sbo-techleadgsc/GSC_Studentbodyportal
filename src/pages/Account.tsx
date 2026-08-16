@@ -8,15 +8,17 @@ import { useLiveData } from '@/lib/hooks'
 import { reportsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
 import { supabase } from '@/lib/supabase'
+import { isEmailRegistered, isStudentIdTaken, registerStudentAccount } from '@/lib/studentRegistry'
 import { STUDENT_ID_FORMAT, STUDENT_ID_PLACEHOLDER, isValidStudentId, normalizeStudentId } from '@/lib/studentId'
 import type { Report } from '@/lib/types'
 
 export default function Account() {
-  const { isAuthenticated, adminName, signUpPublicUser, isAdminEmail, logout } = useAdminAuth()
+  const { isAuthenticated, adminName, signUpPublicUser, isAdminEmail, login, logout } = useAdminAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [studentId, setStudentId] = useState('')
   const [isAdminAccount, setIsAdminAccount] = useState(false)
+  const [mode, setMode] = useState<'signup' | 'login'>('signup')
   const [termsAccepted, setTermsAccepted] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
@@ -39,6 +41,20 @@ export default function Account() {
       active = false
     }
   }, [email, isAdminEmail])
+
+  // Detect whether the email already has an account → switch to Log in
+  useEffect(() => {
+    let active = true
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed.includes('@')) return
+    isEmailRegistered(trimmed).then((registered) => {
+      if (!active) return
+      setMode(registered ? 'login' : 'signup')
+    })
+    return () => {
+      active = false
+    }
+  }, [email])
 
   // Get user email when authenticated
   useEffect(() => {
@@ -70,7 +86,27 @@ export default function Account() {
     setReports([])
   }
 
-  async function handleAuthSubmit(e: FormEvent) {
+  async function handleLogin(e: FormEvent) {
+    e.preventDefault()
+    setAuthError('')
+    setAuthMessage('')
+
+    if (!email.trim() || !password.trim()) {
+      setAuthError('Please enter your email and password.')
+      return
+    }
+
+    const err = await login(email, password)
+    if (err) {
+      setAuthError(`Sign-in failed: ${err}`)
+      return
+    }
+
+    setAuthMessage('Welcome back!')
+    setPassword('')
+  }
+
+  async function handleSignUp(e: FormEvent) {
     e.preventDefault()
     setAuthError('')
     setAuthMessage('')
@@ -88,24 +124,37 @@ export default function Account() {
         setAuthError(`Student ID must be in format: ${STUDENT_ID_FORMAT} (e.g., 00-00000)`)
         return
       }
+      const taken = await isStudentIdTaken(normalizeStudentId(studentId))
+      if (taken) {
+        setAuthError('This Student ID already has an account. Please log in instead.')
+        return
+      }
     }
     if (!termsAccepted) {
       setAuthError('Please accept the Terms & Conditions to create your account.')
       return
     }
 
-    const err = await signUpPublicUser(email, password, isAdminAccount ? undefined : normalizeStudentId(studentId))
-    if (err) {
-      setAuthError(`Sign-in failed: ${err}`)
+    const { error, userId } = await signUpPublicUser(email, password, isAdminAccount ? undefined : normalizeStudentId(studentId))
+    if (error) {
+      if (/already registered/i.test(error)) {
+        setAuthError('An account already exists for this email. Please log in instead.')
+        setMode('login')
+      } else {
+        setAuthError(`Sign-up failed: ${error}`)
+      }
       return
     }
 
-    setAuthMessage(`Welcome! You can now vote and submit reports.`)
+    if (userId && !isAdminAccount) await registerStudentAccount(normalizeStudentId(studentId), userId)
+
+    setAuthMessage('Account created! You can now vote and submit reports.')
     // Clear form on success
     setEmail('')
     setPassword('')
     setStudentId('')
     setTermsAccepted(false)
+    setMode('signup')
   }
 
   if (isAuthenticated) {
@@ -207,27 +256,48 @@ export default function Account() {
         <p className="mt-1.5 font-thin text-ink-600">Create an account to vote on polls and submit reports.</p>
 
         <Card className="mt-8 p-6">
-          <form onSubmit={handleAuthSubmit} className="space-y-4">
+          <form onSubmit={(e) => {
+            e.preventDefault()
+            if (mode === 'login') void handleLogin(e)
+            else void handleSignUp(e)
+          }} className="space-y-4">
             <Field label="Your personal email" hint="Use the email you check regularly (e.g., Gmail or Yahoo)">
               <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="yourname@gmail.com" />
             </Field>
-            {isAdminAccount ? (
-              <div className="rounded-app border border-gold-500/40 bg-gold-50 p-3">
-                <p className="text-sm text-gold-900">Admin account detected &mdash; no Student ID needed.</p>
-              </div>
+
+            {mode === 'login' ? (
+              <>
+                {isAdminAccount && (
+                  <div className="rounded-app border border-gold-500/40 bg-gold-50 p-3">
+                    <p className="text-sm text-gold-900">Admin account detected &mdash; logging in.</p>
+                  </div>
+                )}
+                <Field label="Password">
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                </Field>
+              </>
             ) : (
-              <Field label="Student ID" hint={`Format: ${STUDENT_ID_FORMAT}`}>
-                <Input
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder={STUDENT_ID_PLACEHOLDER}
-                  maxLength={8}
-                />
-              </Field>
+              <>
+                {isAdminAccount ? (
+                  <div className="rounded-app border border-gold-500/40 bg-gold-50 p-3">
+                    <p className="text-sm text-gold-900">Admin account detected &mdash; no Student ID needed.</p>
+                  </div>
+                ) : (
+                  <Field label="Student ID" hint={`Format: ${STUDENT_ID_FORMAT}`}>
+                    <Input
+                      value={studentId}
+                      onChange={(e) => setStudentId(e.target.value)}
+                      placeholder={STUDENT_ID_PLACEHOLDER}
+                      maxLength={8}
+                    />
+                  </Field>
+                )}
+                <Field label="Password">
+                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                </Field>
+              </>
             )}
-            <Field label="Password">
-              <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
-            </Field>
+
             {authError && <p className="text-sm text-danger-600">{authError}</p>}
             {authMessage && (
               <div className="flex items-start gap-2 rounded-app bg-success-50 p-3">
@@ -236,24 +306,50 @@ export default function Account() {
               </div>
             )}
 
-            <label className="flex cursor-pointer items-start gap-3 rounded-app border border-navy-900/10 bg-navy-50/50 p-4">
-              <input
-                type="checkbox"
-                checked={termsAccepted}
-                onChange={(e) => setTermsAccepted(e.target.checked)}
-                className="mt-0.5 h-4 w-4 flex-shrink-0 accent-gold-500"
-              />
-              <span className="text-xs leading-relaxed text-ink-600">
-                <span className="font-semibold text-ink-900">Terms &amp; Conditions:</span> I agree that my name, email, and
-                Student ID will be kept secure and confidential by The Axis Student Organization, and will only be used for
-                administrative purposes such as verifying my identity, processing my reports, and counting my votes. My
-                information will never be shared publicly without my consent.
-              </span>
-            </label>
+            {mode === 'signup' && (
+              <label className="flex cursor-pointer items-start gap-3 rounded-app border border-navy-900/10 bg-navy-50/50 p-4">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 flex-shrink-0 accent-gold-500"
+                />
+                <span className="text-xs leading-relaxed text-ink-600">
+                  <span className="font-semibold text-ink-900">Terms &amp; Conditions:</span> I agree that my name, email, and
+                  Student ID will be kept secure and confidential by The Axis Student Organization, and will only be used for
+                  administrative purposes such as verifying my identity, processing my reports, and counting my votes. My
+                  information will never be shared publicly without my consent.
+                </span>
+              </label>
+            )}
 
-            <button type="submit" className="w-full rounded-app bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800">
-              Create account / sign in
-            </button>
+            {mode === 'login' ? (
+              <button type="submit" className="w-full rounded-app bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800">
+                Log in
+              </button>
+            ) : (
+              <button type="submit" className="w-full rounded-app bg-navy-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-navy-800">
+                Create account / sign up
+              </button>
+            )}
+
+            <p className="text-center text-xs text-ink-500">
+              {mode === 'login' ? (
+                <>
+                  New here?{' '}
+                  <button type="button" onClick={() => setMode('signup')} className="font-semibold text-navy-900 hover:underline">
+                    Sign up instead
+                  </button>
+                </>
+              ) : (
+                <>
+                  Already have an account?{' '}
+                  <button type="button" onClick={() => setMode('login')} className="font-semibold text-navy-900 hover:underline">
+                    Log in instead
+                  </button>
+                </>
+              )}
+            </p>
           </form>
         </Card>
 

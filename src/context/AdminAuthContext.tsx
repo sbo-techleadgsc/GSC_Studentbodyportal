@@ -16,7 +16,11 @@ interface AdminAuthValue {
   adminName: string | null
   login: (email: string, password: string) => Promise<string | null>
   requestMagicLink: (email: string) => Promise<boolean>
-  signUpPublicUser: (email: string, password: string, studentId?: string) => Promise<string | null>
+  signUpPublicUser: (
+    email: string,
+    password: string,
+    studentId?: string
+  ) => Promise<{ error: string | null; userId: string | null }>
   isAdminEmail: (email: string) => Promise<boolean>
   logout: () => void
 }
@@ -111,18 +115,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // but it will NEVER be an admin unless you add them to the admins
   // table yourself. isAdmin is derived fresh by applySession(), not
   // set here.
-  const signUpPublicUser = async (email: string, password: string, studentId?: string): Promise<string | null> => {
-    if (!supabase) return 'Supabase is not configured on this environment.'
-    const { error } = await supabase.auth.signUp({
+  const signUpPublicUser = async (
+    email: string,
+    password: string,
+    studentId?: string
+  ): Promise<{ error: string | null; userId: string | null }> => {
+    if (!supabase) return { error: 'Supabase is not configured on this environment.', userId: null }
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: password.trim(),
       options: studentId ? { data: { student_id: studentId } } : undefined,
     })
     if (error) {
       console.error('[signUpPublicUser] Error:', error.message)
-      return error.message
+      return { error: error.message, userId: null }
     }
-    return null
+    return { error: null, userId: data.user?.id ?? null }
   }
 
   const logout = () => {
