@@ -1,4 +1,10 @@
-// Site config — one file to re-brand the whole portal.
+// ─────────────────────────────────────────────────────────────
+// SITE CONFIG — edit this one file to re-brand the whole portal.
+// Nothing else in /src should need to change for a new term,
+// a new creator credit, or a new school year.
+// ─────────────────────────────────────────────────────────────
+
+import { getStackedData } from "recharts/types/util/ChartUtils";
 
 export const siteConfig = {
   schoolName: 'The Axis',
@@ -13,7 +19,7 @@ export const siteConfig = {
   // list in sync with the `admins` table (the admins table is still the
   // source of truth for actual admin powers).
   adminEmails: [
-    'gsc.sbofficial@gmail.com',
+    // 'admin@example.com',
   ] as string[],
 
   // Update with your own name/role before launch.
@@ -22,6 +28,6 @@ export const siteConfig = {
   creditBlurb:
     'Conceptualized, designed, and developed in service of students. Built to keep governance open, accountable, and within reach.',
 
-  contactEmail: 'gsc.sbofficial@gmail.com',
-  domain: 'gsc-jhsstudentbody-org.vercel.app',
+  contactEmail: 'sbo@gsc.edu.ph',
+  domain: 'axis-portal.com', // placeholder — replace once you buy your domain
 }
