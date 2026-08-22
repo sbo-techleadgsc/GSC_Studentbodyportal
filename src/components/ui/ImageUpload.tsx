@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react'
+import { X, Image as ImageIcon, Loader2 } from 'lucide-react'
 import { uploadImage, deleteImage } from '@/lib/storage'
 import { clsx } from '@/lib/clsx'
 

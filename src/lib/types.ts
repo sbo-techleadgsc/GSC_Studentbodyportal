@@ -1,11 +1,5 @@
-// ─────────────────────────────────────────────────────────────
-// Shared data types for the SBO Web Portal
-//
-// These map 1:1 to the tables described in supabase/schema.sql.
-// Keeping them in one place means swapping the mock data layer
-// (src/lib/store.ts) for real Supabase calls later doesn't
-// require touching any page or component — only store.ts changes.
-// ─────────────────────────────────────────────────────────────
+// Shared data types. They mirror the Supabase tables so pages only
+// import types from here and never depend on the raw rows.
 
 export type PromiseStatus = 'pending' | 'in-progress' | 'completed'
 export type ReportStatus = 'pending' | 'under-review' | 'resolved' | 'rejected'

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { Button, Card } from '@/components/ui/Primitives'
-import { Mic, Music4, Send, Copy, CheckCircle2, AlertCircle, Play, Pause } from 'lucide-react'
+import { Mic, Music4, Send, Copy, CheckCircle2, AlertCircle, Play } from 'lucide-react'
 
 type ShareRecord = {
   id: string

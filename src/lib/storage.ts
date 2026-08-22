@@ -1,6 +1,4 @@
-// ─────────────────────────────────────────────────────────────
-// SUPABASE STORAGE — Image upload functionality
-// ─────────────────────────────────────────────────────────────
+// Image upload/delete helpers for the Supabase "sbo-images" bucket.
 
 import { supabase } from './supabase'
 

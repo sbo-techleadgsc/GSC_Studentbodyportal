@@ -458,10 +458,6 @@ export default function Community() {
     }
   }
 
-  function getRandomColor() {
-    return COLORS[Math.floor(Math.random() * COLORS.length)]
-  }
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">

@@ -3,7 +3,6 @@ import { Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Primitives'
 import { useLiveData } from '@/lib/hooks'
 import { freedomWallDb } from '@/lib/store'
-import type { FreedomMessage } from '@/lib/types'
 
 export default function AdminCommunity() {
   const [messages, reload] = useLiveData(freedomWallDb.list)

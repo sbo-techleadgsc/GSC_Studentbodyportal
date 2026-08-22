@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { bus } from './store'
 
-/**
- * Subscribes to the store's change bus and re-runs `fetcher` whenever
- * any table changes, so every open tab/page reflects admin edits
- * immediately — the same behavior you'd get from a Supabase Realtime
- * subscription, just running in-memory for now.
- */
+// Subscribes to the store's change bus and re-runs `fetcher` on every
+// table change, so all open tabs reflect admin edits immediately.
 export function useLiveData<T>(fetcher: () => Promise<T>, deps: unknown[] = []): [T | null, () => void] {
   const [data, setData] = useState<T | null>(null)
 

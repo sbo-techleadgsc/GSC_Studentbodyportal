@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────────────────────
-// SITE CONFIG — edit this one file to re-brand the whole portal.
-// Nothing else in /src should need to change for a new term,
-// a new creator credit, or a new school year.
-// ─────────────────────────────────────────────────────────────
+// Site config — one file to re-brand the whole portal.
 
 export const siteConfig = {
   schoolName: 'The Axis',

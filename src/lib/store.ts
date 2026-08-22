@@ -1,17 +1,8 @@
-// ─────────────────────────────────────────────────────────────
-// DATA LAYER — backed by Supabase only.
-//
-// Every list() reads exclusively from Supabase and returns []
-// if Supabase is unconfigured, empty, or errors — never seed
-// data, never a cached copy. Every upsert()/remove() throws if
-// Supabase isn't configured, rather than silently writing to
-// localStorage.
-//
-// The ONE localStorage key still in use (sbo_voted_polls) is
-// not app content — it's a per-device "which option did I vote
-// for" receipt, used only to disable the vote button in the UI.
-// It is never read as a substitute for poll data itself.
-// ─────────────────────────────────────────────────────────────
+// Data layer — reads and writes straight to Supabase. list() returns
+// [] when Supabase is unconfigured/empty/errors; upsert()/remove()
+// throw if it isn't configured. The only localStorage key left is a
+// per-device "which poll option did I vote for" receipt used to
+// disable the vote button — never as poll data itself.
 
 import type {
   Officer,
@@ -23,7 +14,6 @@ import type {
   Poll,
   PollOption,
   FreedomMessage,
-  NoteColor,
   ScheduledEvent,
 } from './types'
 import { supabase } from './supabase'
@@ -343,7 +333,7 @@ function toSnakeEvent(row: ScheduledEvent): Record<string, unknown> {
   }
 }
 
-// ── Officers ────────────────────────────────────────────────
+// Officers
 export const officersDb = {
   async list(): Promise<Officer[]> {
     if (!supabase) {
@@ -397,7 +387,7 @@ export const officersDb = {
   },
 }
 
-// ── Promises ────────────────────────────────────────────────
+// Promises
 export const promisesDb = {
   async list(): Promise<Promise_[]> {
     if (!supabase) {
@@ -448,7 +438,7 @@ export const promisesDb = {
   },
 }
 
-// ── Budget ──────────────────────────────────────────────────
+// Budget
 export const budgetDb = {
   async list(): Promise<BudgetItem[]> {
     if (!supabase) {
@@ -499,7 +489,7 @@ export const budgetDb = {
   },
 }
 
-// ── Updates ─────────────────────────────────────────────────
+// Updates
 export const updatesDb = {
   async list(): Promise<UpdateEntry[]> {
     if (!supabase) {
@@ -553,7 +543,7 @@ export const updatesDb = {
   },
 }
 
-// ── Reports ─────────────────────────────────────────────────
+// Reports
 export const reportsDb = {
   async list(): Promise<Report[]> {
     if (!supabase) {
@@ -738,7 +728,7 @@ export const reportsDb = {
   },
 }
 
-// ── News ────────────────────────────────────────────────────
+// News
 export const newsDb = {
   async list(): Promise<NewsPost[]> {
     if (!supabase) {
@@ -792,7 +782,7 @@ export const newsDb = {
   },
 }
 
-// ── Events (calendar) ───────────────────────────────────────
+// Events (calendar)
 export const eventsDb = {
   async list(): Promise<ScheduledEvent[]> {
     if (!supabase) {
@@ -846,7 +836,7 @@ export const eventsDb = {
   },
 }
 
-// ── Freedom Wall ────────────────────────────────────────────
+// Freedom Wall
 async function ensureGuestSession() {
   if (!supabase) return
 
@@ -970,7 +960,7 @@ export const freedomWallDb = {
   },
 }
 
-// ── Polls ──────────────────────────────────────────────────
+// Polls
 export const pollsDb = {
   async list(): Promise<Poll[]> {
     if (!supabase) {
@@ -1153,7 +1143,7 @@ const { error } = await supabase
   },
 }
 
-// ── Site settings (maintenance mode, etc.) ────────────────────
+// Site settings (maintenance mode, etc.)
 export interface SiteSettings {
   maintenanceMode: boolean
   maintenanceMessage: string
@@ -1227,7 +1217,7 @@ export const settingsDb = {
   },
 }
 
-// ── Reset helper (handy for demoing) ─────────────────────────
+// Reset helper (handy for demoing)
 export function resetAllData() {
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k))
   bus.dispatchEvent(new CustomEvent('change', { detail: 'all' }))

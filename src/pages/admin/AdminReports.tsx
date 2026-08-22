@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Lock, Trash2, Check, Ban, Shield } from 'lucide-react'
+import { Eye, Lock, Trash2, Check, Shield } from 'lucide-react'
 import { Card, Button, StatusPill, Badge } from '@/components/ui/Primitives'
 import { Select, Textarea, Field } from '@/components/ui/Form'
 import { Modal } from '@/components/ui/Modal'

@@ -2,7 +2,7 @@ import type * as React from 'react'
 import type { ButtonHTMLAttributes, ReactNode } from 'react'
 import { clsx } from '@/lib/clsx'
 
-// ── Button ─────────────────────────────────────────────────
+// Button
 export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'success'
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
@@ -32,7 +32,7 @@ export function Button({ variant = 'primary', size = 'md', className, ...props }
   )
 }
 
-// ── Card ───────────────────────────────────────────────────
+// Card
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: ReactNode
 }
@@ -47,7 +47,7 @@ export function Card({ className, children, ...rest }: CardProps) {
   )
 }
 
-// ── Badge (pill tag) ───────────────────────────────────────
+// Badge (pill tag)
 type BadgeTone = 'navy' | 'gold' | 'success' | 'warning' | 'danger' | 'neutral'
 const badgeTones: Record<BadgeTone, string> = {
   navy: 'bg-navy-100 text-navy-900',
@@ -66,7 +66,7 @@ export function Badge({ tone = 'navy', children, className }: { tone?: BadgeTone
   )
 }
 
-// ── Status pill (for promises / reports) ──────────────────
+// Status pill (for promises / reports)
 export function StatusPill({ status }: { status: 'pending' | 'in-progress' | 'completed' | 'under-review' | 'resolved' | 'rejected' }) {
   const map: Record<string, { tone: BadgeTone; label: string }> = {
     pending: { tone: 'neutral', label: 'Pending' },
@@ -80,7 +80,7 @@ export function StatusPill({ status }: { status: 'pending' | 'in-progress' | 'co
   return <Badge tone={tone}>{label}</Badge>
 }
 
-// ── Section eyebrow + heading ──────────────────────────────
+// Section eyebrow + heading
 export function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; title: string; subtitle?: string }) {
   return (
     <div>
@@ -91,7 +91,7 @@ export function SectionHeading({ eyebrow, title, subtitle }: { eyebrow: string; 
   )
 }
 
-// ── Empty state ─────────────────────────────────────────────
+// Empty state
 export function EmptyState({ icon, title, subtitle }: { icon: ReactNode; title: string; subtitle?: string }) {
   return (
     <div className="glass-surface flex flex-col items-center justify-center gap-3 rounded-app border border-white/60 px-6 py-16 text-center">

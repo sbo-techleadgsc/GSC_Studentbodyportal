@@ -1,10 +1,6 @@
-// ─────────────────────────────────────────────────────────────
-// ADMIN AUTH — backed by Supabase Auth + an `admins` allowlist
-// table. Being logged in is NOT the same as being an admin:
-// isAuthenticated = "has a valid Supabase session"
-// isAdmin         = "that session's user_id is in the admins table"
-// Only isAdmin should ever gate admin routes/actions.
-// ─────────────────────────────────────────────────────────────
+// Admin auth — isAuthenticated means "valid Supabase session",
+// isAdmin means "that session's user is in the admins table".
+// Only isAdmin should gate admin routes/actions.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
