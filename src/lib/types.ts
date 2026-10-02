@@ -35,6 +35,10 @@ export interface Officer {
   email: string
   photoUrl: string
   bio?: string
+  facebook?: string
+  instagram?: string
+  twitter?: string
+  linkedin?: string
 }
 
 export interface Promise_ {

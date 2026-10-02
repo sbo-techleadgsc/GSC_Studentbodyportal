@@ -12,6 +12,10 @@ create table officers (
   email text,
   photo_url text,
   bio text,
+  facebook text,
+  instagram text,
+  twitter text,
+  linkedin text,
   created_at timestamptz default now()
 );
 

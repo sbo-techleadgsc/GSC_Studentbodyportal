@@ -80,6 +80,10 @@ function toCamelOfficer(row: any): Officer {
     email: row.email,
     photoUrl: row.photo_url ?? row.photoUrl ?? '',
     bio: row.bio,
+    facebook: row.facebook ?? row.facebook ?? undefined,
+    instagram: row.instagram ?? row.instagram ?? undefined,
+    twitter: row.twitter ?? row.twitter ?? undefined,
+    linkedin: row.linkedin ?? row.linkedin ?? undefined,
   }
 }
 
@@ -94,6 +98,10 @@ function toSnakeOfficer(row: Officer): Record<string, unknown> {
     email: row.email,
     photo_url: row.photoUrl,
     bio: row.bio,
+    facebook: row.facebook,
+    instagram: row.instagram,
+    twitter: row.twitter,
+    linkedin: row.linkedin,
   }
 }
 

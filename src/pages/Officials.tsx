@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, Mail } from 'lucide-react'
+import { ChevronDown, Mail, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Card } from '@/components/ui/Primitives'
@@ -29,36 +29,83 @@ export default function Officials() {
           {officers?.map((officer) => {
             const isOpen = expanded === officer.id
             return (
-              <Card key={officer.id} className="overflow-hidden">
-                <div className="relative aspect-[4/3] w-full overflow-hidden bg-navy-900">
-                  <img src={officer.photoUrl} alt={officer.name} className="h-full w-full object-cover" />
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy-950/85 via-navy-950/20 to-transparent p-4 pt-10">
-                    <p className="text-lg font-bold leading-tight text-white">{officer.name}</p>
-                    <p className="text-sm text-navy-100/85">{officer.position}</p>
+              <Card key={officer.id} className="overflow-hidden transition-all duration-200 hover:-translate-y-0.5">
+                <button
+                  onClick={() => setExpanded(isOpen ? null : officer.id)}
+                  className="w-full text-left"
+                >
+                  <div className="relative aspect-[4/3] w-full overflow-hidden bg-navy-900">
+                    <img src={officer.photoUrl} alt={officer.name} className="h-full w-full object-contain" />
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-navy-950/85 via-navy-950/20 to-transparent p-4 pt-10">
+                      <p className="text-lg font-bold leading-tight text-white">{officer.name}</p>
+                      <p className="text-sm text-navy-100/85">{officer.position}</p>
+                    </div>
                   </div>
-                </div>
+                </button>
 
                 <div className="p-5">
                   <p className="text-sm text-ink-600">{officer.year} &middot; {officer.major}</p>
 
-                  {officer.bio && (
-                    <div
-                      className={clsx(
-                        'grid transition-all duration-300 ease-out',
-                        isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                      )}
-                    >
-                      <div className="overflow-hidden">
-                        <p className="mt-3 text-sm leading-relaxed text-ink-600">{officer.bio}</p>
-                        <a
-                          href={`mailto:${officer.email}`}
-                          className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900 hover:underline"
-                        >
-                          <Mail className="h-3.5 w-3.5" /> {officer.email}
-                        </a>
+                  <div
+                    className={clsx(
+                      'grid transition-all duration-300 ease-out',
+                      isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+                    )}
+                  >
+                    <div className="overflow-hidden">
+                      {officer.bio && <p className="mt-3 text-sm leading-relaxed text-ink-600">{officer.bio}</p>}
+                      
+                      <a
+                        href={`mailto:${officer.email}`}
+                        className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-navy-900 hover:underline"
+                      >
+                        <Mail className="h-3.5 w-3.5" /> {officer.email}
+                      </a>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {officer.facebook && (
+                          <a
+                            href={officer.facebook}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
+                          >
+                            <Facebook className="h-3.5 w-3.5" /> Facebook
+                          </a>
+                        )}
+                        {officer.instagram && (
+                          <a
+                            href={officer.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
+                          >
+                            <Instagram className="h-3.5 w-3.5" /> Instagram
+                          </a>
+                        )}
+                        {officer.twitter && (
+                          <a
+                            href={officer.twitter}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
+                          >
+                            <Twitter className="h-3.5 w-3.5" /> Twitter
+                          </a>
+                        )}
+                        {officer.linkedin && (
+                          <a
+                            href={officer.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
+                          >
+                            <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                          </a>
+                        )}
                       </div>
                     </div>
-                  )}
+                  </div>
 
                   <button
                     onClick={() => setExpanded(isOpen ? null : officer.id)}
