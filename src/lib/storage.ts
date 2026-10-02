@@ -36,19 +36,11 @@ export async function uploadImage(file: File, folder: string = 'general'): Promi
   }
 
   try {
-    // Check if bucket exists first
-    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(STORAGE_BUCKET)
-    
-    if (bucketError) {
-      console.error('[uploadImage] Bucket check failed:', bucketError)
-      return { url: '', error: `Storage bucket "${STORAGE_BUCKET}" not found or not accessible. Please create it in Supabase.` }
-    }
-
     // Generate unique filename
     const fileExt = file.name.split('.').pop()
     const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
 
-    // Upload file
+    // Upload file directly (skip bucket check as anon key may not have permission to list buckets)
     const { data, error: uploadError } = await supabase.storage
       .from(STORAGE_BUCKET)
       .upload(fileName, file, {
