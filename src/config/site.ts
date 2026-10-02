@@ -4,8 +4,6 @@
 // a new creator credit, or a new school year.
 // ─────────────────────────────────────────────────────────────
 
-import { getStackedData } from "recharts/types/util/ChartUtils";
-
 export const siteConfig = {
   schoolName: 'The Axis',
   orgName: 'Student Body Organization',
