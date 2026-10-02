@@ -114,6 +114,33 @@ create policy "Allow admins to delete events"
   using (exists (select 1 from public.admins where admins.id = auth.uid()));
 
 -- ─────────────────────────────────────────────────────────────
+-- news: public read, admins only write.
+-- ─────────────────────────────────────────────────────────────
+alter table public.news enable row level security;
+
+drop policy if exists "Allow public read news" on public.news;
+create policy "Allow public read news"
+  on public.news for select using (true);
+
+drop policy if exists "Allow admins to insert news" on public.news;
+create policy "Allow admins to insert news"
+  on public.news for insert
+  to authenticated
+  with check (exists (select 1 from public.admins where admins.id = auth.uid()));
+
+drop policy if exists "Allow admins to update news" on public.news;
+create policy "Allow admins to update news"
+  on public.news for update
+  to authenticated
+  using (exists (select 1 from public.admins where admins.id = auth.uid()));
+
+drop policy if exists "Allow admins to delete news" on public.news;
+create policy "Allow admins to delete news"
+  on public.news for delete
+  to authenticated
+  using (exists (select 1 from public.admins where admins.id = auth.uid()));
+
+-- ─────────────────────────────────────────────────────────────
 -- site_settings: public read (maintenance-mode check runs with the
 -- anon key before the React app loads), admins only write.
 -- ─────────────────────────────────────────────────────────────
