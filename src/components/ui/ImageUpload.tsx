@@ -26,6 +26,7 @@ export function ImageUpload({ value, onChange, label = 'Image', folder = 'genera
     const result = await uploadImage(file, folder)
 
     if (result.error) {
+      console.error('[ImageUpload] Upload error:', result.error)
       setError(result.error)
       setUploading(false)
       return

@@ -34,10 +34,18 @@ export async function uploadImage(file: File, folder: string = 'general'): Promi
   }
 
   if (!supabase) {
-    return { url: '', error: 'Supabase is not configured' }
+    return { url: '', error: 'Supabase is not configured. Please check your environment variables.' }
   }
 
   try {
+    // Check if bucket exists first
+    const { data: bucketData, error: bucketError } = await supabase.storage.getBucket(STORAGE_BUCKET)
+    
+    if (bucketError) {
+      console.error('[uploadImage] Bucket check failed:', bucketError)
+      return { url: '', error: `Storage bucket "${STORAGE_BUCKET}" not found or not accessible. Please create it in Supabase.` }
+    }
+
     // Generate unique filename
     const fileExt = file.name.split('.').pop()
     const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${fileExt}`
@@ -52,6 +60,18 @@ export async function uploadImage(file: File, folder: string = 'general'): Promi
 
     if (uploadError) {
       console.error('[uploadImage] Upload failed:', uploadError)
+      
+      // Provide more specific error messages
+      if (uploadError.message.includes('Bucket not found')) {
+        return { url: '', error: `Storage bucket "${STORAGE_BUCKET}" does not exist. Please create it in Supabase Storage.` }
+      }
+      if (uploadError.message.includes('permission') || uploadError.message.includes('Policy')) {
+        return { url: '', error: 'Permission denied. Check Storage policies in Supabase.' }
+      }
+      if (uploadError.message.includes('duplicate')) {
+        return { url: '', error: 'File with this name already exists.' }
+      }
+      
       return { url: '', error: uploadError.message }
     }
 
@@ -63,7 +83,7 @@ export async function uploadImage(file: File, folder: string = 'general'): Promi
     return { url: publicUrlData.publicUrl }
   } catch (error) {
     console.error('[uploadImage] Unexpected error:', error)
-    return { url: '', error: 'Upload failed due to an unexpected error' }
+    return { url: '', error: `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}` }
   }
 }
 
