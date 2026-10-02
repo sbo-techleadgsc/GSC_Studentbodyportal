@@ -85,7 +85,7 @@ export default function NewsArticle() {
               <img
                 src={article.imageUrl}
                 alt={article.title}
-                className="h-64 w-full rounded-2xl object-cover sm:h-80"
+                className="w-full rounded-2xl object-contain"
               />
               {credits.photographer && (
                 <figcaption className="mt-2 text-right text-xs text-ink-400">

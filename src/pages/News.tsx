@@ -37,7 +37,7 @@ export default function News() {
             return (
               <Link key={n.id} to={`/news/${n.id}`} className="group">
                 <Card className="h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.99]">
-                  {n.imageUrl && <img src={n.imageUrl} alt={n.title} className="h-44 w-full object-cover" />}
+                  {n.imageUrl && <img src={n.imageUrl} alt={n.title} className="w-full object-contain" />}
                   <div className="p-6">
                     <div className="flex items-center justify-between gap-2">
                       <Badge tone="navy">{n.category}</Badge>
