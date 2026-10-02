@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, Lock, Trash2, Check, Ban, Shield } from 'lucide-react'
+import { Eye, Lock, Trash2, Check, Shield } from 'lucide-react'
 import { Card, Button, StatusPill, Badge } from '@/components/ui/Primitives'
 import { Select, Textarea, Field } from '@/components/ui/Form'
 import { Modal } from '@/components/ui/Modal'
@@ -47,7 +47,7 @@ export default function AdminReports() {
             key={key}
             onClick={() => setFilter(key)}
             className={clsx(
-              'shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors',
+              'shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-all duration-200 active:scale-95',
               filter === key ? 'bg-navy-900 text-white' : 'bg-white text-ink-600 hover:bg-navy-50'
             )}
           >

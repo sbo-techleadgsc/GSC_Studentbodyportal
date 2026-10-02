@@ -1,11 +1,5 @@
-// ─────────────────────────────────────────────────────────────
-// Shared data types for the SBO Web Portal
-//
-// These map 1:1 to the tables described in supabase/schema.sql.
-// Keeping them in one place means swapping the mock data layer
-// (src/lib/store.ts) for real Supabase calls later doesn't
-// require touching any page or component — only store.ts changes.
-// ─────────────────────────────────────────────────────────────
+// Shared data types. They mirror the Supabase tables so pages only
+// import types from here and never depend on the raw rows.
 
 export type PromiseStatus = 'pending' | 'in-progress' | 'completed'
 export type ReportStatus = 'pending' | 'under-review' | 'resolved' | 'rejected'
@@ -28,6 +22,7 @@ export type UpdateCategory =
   | 'Event'
   | 'Policy'
 export type NewsCategory = 'Announcement' | 'Events' | 'Update'
+export type EventCategory = 'School' | 'Organization' | 'Assembly' | 'Other'
 export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'orange'
 
 export interface Officer {
@@ -100,6 +95,19 @@ export interface NewsPost {
   content: string
   imageUrl?: string
   date: string
+}
+
+export interface ScheduledEvent {
+  id: string
+  title: string
+  description?: string
+  category: EventCategory
+  location?: string
+  startDate: string // YYYY-MM-DD
+  endDate?: string // YYYY-MM-DD (inclusive, for multi-day events)
+  startTime?: string
+  endTime?: string
+  imageUrl?: string
 }
 
 export interface PollOption {

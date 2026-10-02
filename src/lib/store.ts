@@ -1,17 +1,8 @@
-// ─────────────────────────────────────────────────────────────
-// DATA LAYER — backed by Supabase only.
-//
-// Every list() reads exclusively from Supabase and returns []
-// if Supabase is unconfigured, empty, or errors — never seed
-// data, never a cached copy. Every upsert()/remove() throws if
-// Supabase isn't configured, rather than silently writing to
-// localStorage.
-//
-// The ONE localStorage key still in use (sbo_voted_polls) is
-// not app content — it's a per-device "which option did I vote
-// for" receipt, used only to disable the vote button in the UI.
-// It is never read as a substitute for poll data itself.
-// ─────────────────────────────────────────────────────────────
+// Data layer — reads and writes straight to Supabase. list() returns
+// [] when Supabase is unconfigured/empty/errors; upsert()/remove()
+// throw if it isn't configured. The only localStorage key left is a
+// per-device "which poll option did I vote for" receipt used to
+// disable the vote button — never as poll data itself.
 
 import type {
   Officer,
@@ -23,7 +14,7 @@ import type {
   Poll,
   PollOption,
   FreedomMessage,
-  NoteColor,
+  ScheduledEvent,
 } from './types'
 import { supabase } from './supabase'
 
@@ -34,6 +25,7 @@ const KEYS = {
   updates: 'sbo_updates',
   reports: 'sbo_reports',
   news: 'sbo_news',
+  events: 'sbo_events',
   polls: 'sbo_polls',
   votedPolls: 'sbo_voted_polls',
   freedomWall: 'sbo_freedom_wall',
@@ -295,6 +287,7 @@ function toCamelNewsPost(row: any): NewsPost {
     title: row.title,
     category: row.category,
     content: row.content,
+    imageUrl: row.image_url ?? row.imageUrl ?? undefined,
     date: row.date,
   }
 }
@@ -305,11 +298,42 @@ function toSnakeNewsPost(row: NewsPost): Record<string, unknown> {
     title: row.title,
     category: row.category,
     content: row.content,
+    image_url: row.imageUrl,
     date: row.date,
   }
 }
 
-// ── Officers ────────────────────────────────────────────────
+function toCamelEvent(row: any): ScheduledEvent {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    location: row.location,
+    startDate: row.start_date ?? row.startDate,
+    endDate: row.end_date ?? row.endDate ?? undefined,
+    startTime: row.start_time ?? row.startTime ?? undefined,
+    endTime: row.end_time ?? row.endTime ?? undefined,
+    imageUrl: row.image_url ?? row.imageUrl ?? undefined,
+  }
+}
+
+function toSnakeEvent(row: ScheduledEvent): Record<string, unknown> {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    location: row.location,
+    start_date: row.startDate,
+    end_date: row.endDate,
+    start_time: row.startTime,
+    end_time: row.endTime,
+    image_url: row.imageUrl,
+  }
+}
+
+// Officers
 export const officersDb = {
   async list(): Promise<Officer[]> {
     if (!supabase) {
@@ -363,7 +387,7 @@ export const officersDb = {
   },
 }
 
-// ── Promises ────────────────────────────────────────────────
+// Promises
 export const promisesDb = {
   async list(): Promise<Promise_[]> {
     if (!supabase) {
@@ -414,7 +438,7 @@ export const promisesDb = {
   },
 }
 
-// ── Budget ──────────────────────────────────────────────────
+// Budget
 export const budgetDb = {
   async list(): Promise<BudgetItem[]> {
     if (!supabase) {
@@ -465,7 +489,7 @@ export const budgetDb = {
   },
 }
 
-// ── Updates ─────────────────────────────────────────────────
+// Updates
 export const updatesDb = {
   async list(): Promise<UpdateEntry[]> {
     if (!supabase) {
@@ -519,7 +543,7 @@ export const updatesDb = {
   },
 }
 
-// ── Reports ─────────────────────────────────────────────────
+// Reports
 export const reportsDb = {
   async list(): Promise<Report[]> {
     if (!supabase) {
@@ -704,7 +728,7 @@ export const reportsDb = {
   },
 }
 
-// ── News ────────────────────────────────────────────────────
+// News
 export const newsDb = {
   async list(): Promise<NewsPost[]> {
     if (!supabase) {
@@ -758,7 +782,61 @@ export const newsDb = {
   },
 }
 
-// ── Freedom Wall ────────────────────────────────────────────
+// Events (calendar)
+export const eventsDb = {
+  async list(): Promise<ScheduledEvent[]> {
+    if (!supabase) {
+      return []
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .order('start_date', { ascending: true })
+
+    if (error) {
+      console.error('[eventsDb] Error fetching events:', error)
+      return []
+    }
+
+    return (data ?? []).map(toCamelEvent)
+  },
+
+  async upsert(item: ScheduledEvent): Promise<ScheduledEvent> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { data, error } = await supabase
+      .from('events')
+      .upsert(toSnakeEvent(item), { onConflict: 'id' })
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to upsert event: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.events)
+    return toCamelEvent(data)
+  },
+
+  async remove(id: string): Promise<void> {
+    if (!supabase) {
+      throw new Error('Supabase not configured')
+    }
+
+    const { error } = await supabase.from('events').delete().eq('id', id)
+
+    if (error) {
+      throw new Error(`Failed to remove event: ${error.message}`)
+    }
+
+    dispatchChange(KEYS.events)
+  },
+}
+
+// Freedom Wall
 async function ensureGuestSession() {
   if (!supabase) return
 
@@ -882,7 +960,7 @@ export const freedomWallDb = {
   },
 }
 
-// ── Polls ──────────────────────────────────────────────────
+// Polls
 export const pollsDb = {
   async list(): Promise<Poll[]> {
     if (!supabase) {
@@ -987,15 +1065,14 @@ export const pollsDb = {
       return { ok: false, reason: 'already-voted' }
     }
 
-    try {
-      // Check if user is authenticated
+try {
+      // Only authenticated students can vote. Anonymous/guest sessions are
+      // rejected so every vote is tied to a real verified account (transparency).
       const { data: { user } } = await supabase.auth.getUser()
-      const userId = user?.id
-
-      // If no user, try to get a guest session
-      if (!userId) {
-        await ensureGuestSession()
+      if (!user || user.is_anonymous) {
+        return { ok: false, reason: 'sign-in-required' }
       }
+      const userId = user.id
 
       const { data: pollData } = await supabase
         .from('polls')
@@ -1021,29 +1098,13 @@ export const pollsDb = {
         return { ok: false, reason: 'option-not-found' }
       }
 
-      // Get the current user ID (either authenticated or guest)
-      const { data: { user: currentUser } } = await supabase.auth.getUser()
-      const currentUserId = currentUser?.id
-
-      if (!currentUserId) {
-        console.error('[pollsDb] No user ID available for voting')
-        return { ok: false, reason: 'no-user' }
-      }
-
-      const { error } = await supabase
+const { error } = await supabase
         .from('poll_votes')
-        .insert({ poll_id: pollId, option_id: optionId, user_id: currentUserId })
+        .insert({ poll_id: pollId, option_id: optionId, user_id: userId })
 
       if (!error) {
-        // Get current votes and increment
-        const { data: currentOption } = await supabase
-          .from('poll_options')
-          .select('votes')
-          .eq('id', optionId)
-          .single()
-        const currentVotes = currentOption?.votes ?? 0
-        await supabase.from('poll_options').update({ votes: currentVotes + 1 }).eq('id', optionId)
-
+        // Vote tallying is handled by the DB trigger (bump_poll_option_votes),
+        // so client code never touches votes directly — no inflation possible.
         const votedData = voted ?? {}
         votedData[pollId] = optionId
         write(KEYS.votedPolls, votedData)
@@ -1082,7 +1143,7 @@ export const pollsDb = {
   },
 }
 
-// ── Site settings (maintenance mode, etc.) ────────────────────
+// Site settings (maintenance mode, etc.)
 export interface SiteSettings {
   maintenanceMode: boolean
   maintenanceMessage: string
@@ -1156,7 +1217,7 @@ export const settingsDb = {
   },
 }
 
-// ── Reset helper (handy for demoing) ─────────────────────────
+// Reset helper (handy for demoing)
 export function resetAllData() {
   Object.values(KEYS).forEach((k) => localStorage.removeItem(k))
   bus.dispatchEvent(new CustomEvent('change', { detail: 'all' }))

@@ -1,21 +1,23 @@
-// ─────────────────────────────────────────────────────────────
-// ADMIN AUTH — backed by Supabase Auth + an `admins` allowlist
-// table. Being logged in is NOT the same as being an admin:
-// isAuthenticated = "has a valid Supabase session"
-// isAdmin         = "that session's user_id is in the admins table"
-// Only isAdmin should ever gate admin routes/actions.
-// ─────────────────────────────────────────────────────────────
+// Admin auth — isAuthenticated means "valid Supabase session",
+// isAdmin means "that session's user is in the admins table".
+// Only isAdmin should gate admin routes/actions.
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { supabase } from '@/lib/supabase'
+import { siteConfig } from '@/config/site'
 
 interface AdminAuthValue {
   isAdmin: boolean
   isAuthenticated: boolean
   adminName: string | null
-  login: (email: string, password: string) => Promise<boolean>
+  login: (email: string, password: string) => Promise<string | null>
   requestMagicLink: (email: string) => Promise<boolean>
-  signUpPublicUser: (email: string, password: string) => Promise<boolean>
+  signUpPublicUser: (
+    email: string,
+    password: string,
+    studentId?: string
+  ) => Promise<{ error: string | null; userId: string | null }>
+  isAdminEmail: (email: string) => Promise<boolean>
   logout: () => void
 }
 
@@ -73,19 +75,19 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string) => {
-    if (!supabase) return false
+  const login = async (email: string, password: string): Promise<string | null> => {
+    if (!supabase) return 'Supabase is not configured on this environment.'
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim().toLowerCase(),
       password: password.trim(),
     })
     if (error) {
       console.error('[login] Error:', error.message)
-      return false
+      return error.message
     }
     // onAuthStateChange fires automatically and calls applySession —
     // no manual state-setting here, so nothing can shortcut the admin check.
-    return true
+    return null
   }
 
   const requestMagicLink = async (email: string) => {
@@ -109,17 +111,22 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
   // but it will NEVER be an admin unless you add them to the admins
   // table yourself. isAdmin is derived fresh by applySession(), not
   // set here.
-  const signUpPublicUser = async (email: string, password: string) => {
-    if (!supabase) return false
-    const { error } = await supabase.auth.signUp({
+  const signUpPublicUser = async (
+    email: string,
+    password: string,
+    studentId?: string
+  ): Promise<{ error: string | null; userId: string | null }> => {
+    if (!supabase) return { error: 'Supabase is not configured on this environment.', userId: null }
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim().toLowerCase(),
       password: password.trim(),
+      options: studentId ? { data: { student_id: studentId } } : undefined,
     })
     if (error) {
       console.error('[signUpPublicUser] Error:', error.message)
-      return false
+      return { error: error.message, userId: null }
     }
-    return true
+    return { error: null, userId: data.user?.id ?? null }
   }
 
   const logout = () => {
@@ -129,9 +136,28 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
     setAdminName(null)
   }
 
+  // Used by the public Account page to skip the Student ID field for
+  // admins. Checks the config allowlist first, then best-effort lookup
+  // in the admins table (fails safe to "not admin" on RLS errors).
+  const isAdminEmail = async (email: string) => {
+    if (!supabase) return false
+    const normalized = email.trim().toLowerCase()
+    if (siteConfig.adminEmails.some((e) => e.trim().toLowerCase() === normalized)) return true
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('email', normalized)
+        .maybeSingle()
+      return !error && Boolean(data)
+    } catch {
+      return false
+    }
+  }
+
   return (
     <AdminAuthContext.Provider
-      value={{ isAdmin, isAuthenticated, adminName, login, requestMagicLink, signUpPublicUser, logout }}
+      value={{ isAdmin, isAuthenticated, adminName, login, requestMagicLink, signUpPublicUser, isAdminEmail, logout }}
     >
       {children}
     </AdminAuthContext.Provider>

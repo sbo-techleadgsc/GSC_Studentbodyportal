@@ -3,7 +3,6 @@ import { Trash2 } from 'lucide-react'
 import { Card } from '@/components/ui/Primitives'
 import { useLiveData } from '@/lib/hooks'
 import { freedomWallDb } from '@/lib/store'
-import type { FreedomMessage } from '@/lib/types'
 
 export default function AdminCommunity() {
   const [messages, reload] = useLiveData(freedomWallDb.list)
@@ -28,7 +27,7 @@ export default function AdminCommunity() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight text-ink-900">Community wall</h1>
-          <p className="mt-1 text-sm text-ink-600">Remove inappropriate or outdated notes from the public wall.</p>
+          <p className="mt-1 text-sm font-thin text-ink-600">Remove inappropriate or outdated notes from the public wall.</p>
         </div>
       </div>
 

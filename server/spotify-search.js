@@ -2,7 +2,7 @@ function buildStableAudioUrl(track) {
   return track.preview || '/audio/preview-loop.wav'
 }
 
-export async function searchSpotifyTracks(query, env = process.env) {
+export async function searchSpotifyTracks(query, _env = process.env) {
   const trimmedQuery = query?.trim()
   if (!trimmedQuery) {
     return []

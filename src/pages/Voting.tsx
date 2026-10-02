@@ -33,9 +33,9 @@ export default function Voting() {
         badge={openPolls[0] && <LiveBadge>Voting open &middot; {openPolls[0].question}</LiveBadge>}
       />
 
-      <div className="mx-auto max-w-3xl px-6 py-10">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-10">
         <h2 className="text-2xl font-extrabold tracking-tight text-ink-900">Public Polls</h2>
-        <p className="mt-1.5 text-ink-600">Cast your vote. Results update live, and a quick sign-in is required before your vote is counted.</p>
+        <p className="mt-1.5 font-thin text-ink-600">Cast your vote. Results update live, and a quick sign-in is required before your vote is counted.</p>
 
         {openPolls.length === 0 && (
           <div className="mt-8">
@@ -94,13 +94,13 @@ export default function Voting() {
                 <div className="mt-4 flex gap-2">
                   <Link
                     to="/account"
-                    className="flex-1 rounded-app bg-navy-900 px-4 py-2 text-center text-sm font-semibold text-white transition-colors hover:bg-navy-800"
+                    className="flex-1 rounded-app bg-navy-900 px-4 py-2 text-center text-sm font-semibold text-white transition-all duration-200 hover:bg-navy-800 active:scale-[0.97]"
                   >
                     Go to Account
                   </Link>
                   <button
                     onClick={dismissAuthPrompt}
-                    className="rounded-app border border-navy-900/10 px-4 py-2 text-sm font-semibold text-ink-900 transition-colors hover:bg-navy-50"
+                    className="rounded-app border border-navy-900/10 px-4 py-2 text-sm font-semibold text-ink-900 transition-all duration-200 hover:bg-navy-50 active:scale-[0.97]"
                   >
                     Cancel
                   </button>
@@ -163,8 +163,8 @@ function PollCard({ poll, closed, canVote, onRequireAuth, onVoted }: { poll: Pol
                 onClick={() => vote(opt.id)}
                 disabled={isVoting}
                 className={clsx(
-                  'flex w-full items-center justify-between rounded-app border border-navy-900/10 px-4 py-3 text-left text-sm font-semibold transition-colors',
-                  isVoting ? 'opacity-50 cursor-not-allowed' : 'hover:border-navy-900/30 hover:bg-navy-50',
+                  'flex w-full items-center justify-between rounded-app border border-navy-900/10 px-4 py-3 text-left text-sm font-semibold transition-all duration-200 active:scale-[0.98]',
+                  isVoting ? 'opacity-50 cursor-not-allowed active:scale-100' : 'hover:border-navy-900/30 hover:bg-navy-50',
                   'text-ink-900'
                 )}
               >

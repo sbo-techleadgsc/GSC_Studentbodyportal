@@ -1,4 +1,4 @@
-import { Phone, AlertTriangle, X } from 'lucide-react'
+import { Phone, AlertTriangle } from 'lucide-react'
 import { Modal } from './Modal'
 import { CRISIS_HOTLINES } from '@/lib/crisisDetection'
 

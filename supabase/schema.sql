@@ -65,6 +65,20 @@ create table news (
   date date not null default current_date
 );
 
+create table events (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  description text,
+  category text not null default 'School' check (category in ('School','Organization','Assembly','Other')),
+  location text,
+  start_date date not null default current_date,
+  end_date date,
+  start_time text,
+  end_time text,
+  image_url text,
+  created_at timestamptz default now()
+);
+
 create table polls (
   id uuid primary key default gen_random_uuid(),
   question text not null,
@@ -123,6 +137,7 @@ alter table promises enable row level security;
 alter table budget_items enable row level security;
 alter table updates enable row level security;
 alter table news enable row level security;
+alter table events enable row level security;
 alter table polls enable row level security;
 alter table freedom_wall enable row level security;
 alter table freedom_wall_meta enable row level security;
@@ -135,6 +150,7 @@ create policy "public read" on promises for select using (true);
 create policy "public read" on budget_items for select using (true);
 create policy "public read" on updates for select using (true);
 create policy "public read" on news for select using (true);
+create policy "public read" on events for select using (true);
 create policy "public read" on polls for select using (true);
 create policy "public read" on freedom_wall for select using (true);
 create policy "public read" on freedom_wall_meta for select using (true);

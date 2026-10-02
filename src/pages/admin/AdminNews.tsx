@@ -7,6 +7,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload'
 import { useLiveData } from '@/lib/hooks'
 import { newsDb } from '@/lib/store'
 import { formatDate } from '@/lib/format'
+import { creditsToContent, parseCredits, type NewsCredits } from '@/lib/newsCredits'
 import type { NewsPost, NewsCategory } from '@/lib/types'
 
 const emptyForm = {
@@ -61,14 +62,32 @@ export default function AdminNews() {
 }
 
 function NewsForm({ initial, onClose }: { initial: NewsPost | typeof emptyForm; onClose: () => void }) {
-  const [form, setForm] = useState(initial)
+  const isEdit = 'id' in initial
+  const [form, setForm] = useState({
+    id: isEdit ? (initial as NewsPost).id : '',
+    title: initial.title,
+    category: initial.category,
+    content: isEdit ? parseCredits(initial.content).body : initial.content,
+    imageUrl: initial.imageUrl ?? '',
+    date: initial.date,
+  })
+  const [credits, setCredits] = useState<NewsCredits>(() =>
+    isEdit ? parseCredits(initial.content).credits : {}
+  )
   const [saving, setSaving] = useState(false)
 
   async function save() {
     if (!form.title || !form.content) return
     setSaving(true)
     try {
-      const itemToSave = 'id' in form ? form : { ...form, id: crypto.randomUUID() }
+      const itemToSave: NewsPost = {
+        id: form.id || crypto.randomUUID(),
+        title: form.title,
+        category: form.category,
+        content: creditsToContent(credits, form.content),
+        imageUrl: form.imageUrl || undefined,
+        date: form.date,
+      }
       await newsDb.upsert(itemToSave)
       onClose()
     } catch (error) {
@@ -98,7 +117,18 @@ function NewsForm({ initial, onClose }: { initial: NewsPost | typeof emptyForm; 
           </Field>
         </div>
         <Field label="Content">
-          <Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Write the announcement..." />
+          <Textarea value={form.content} onChange={(e) => setForm({ ...form, content: e.target.value })} placeholder="Write the announcement. Separate paragraphs with a blank line..." />
+        </Field>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Written by" hint="Optional — reporter or author">
+            <Input value={credits.author ?? ''} onChange={(e) => setCredits({ ...credits, author: e.target.value })} placeholder="e.g., John Cruz" />
+          </Field>
+          <Field label="Shot by" hint="Optional — photographer credit for the image">
+            <Input value={credits.photographer ?? ''} onChange={(e) => setCredits({ ...credits, photographer: e.target.value })} placeholder="e.g., Maria Santos" />
+          </Field>
+        </div>
+        <Field label="Source" hint="Optional — e.g., SBO PIO Office">
+          <Input value={credits.source ?? ''} onChange={(e) => setCredits({ ...credits, source: e.target.value })} placeholder="e.g., SBO Public Information Office" />
         </Field>
         <ImageUpload
           value={form.imageUrl || ''}
