@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ChevronDown, Mail, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react'
+import { ChevronDown, Mail, Link } from 'lucide-react'
 import { PageHero } from '@/components/layout/PageHero'
 import { LiveBadge } from '@/components/ui/LiveBadge'
 import { Card } from '@/components/ui/Primitives'
@@ -70,7 +70,7 @@ export default function Officials() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
                           >
-                            <Facebook className="h-3.5 w-3.5" /> Facebook
+                            <Link className="h-3.5 w-3.5" /> Facebook
                           </a>
                         )}
                         {officer.instagram && (
@@ -80,7 +80,7 @@ export default function Officials() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
                           >
-                            <Instagram className="h-3.5 w-3.5" /> Instagram
+                            <Link className="h-3.5 w-3.5" /> Instagram
                           </a>
                         )}
                         {officer.twitter && (
@@ -90,7 +90,7 @@ export default function Officials() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
                           >
-                            <Twitter className="h-3.5 w-3.5" /> Twitter
+                            <Link className="h-3.5 w-3.5" /> Twitter
                           </a>
                         )}
                         {officer.linkedin && (
@@ -100,7 +100,7 @@ export default function Officials() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs font-medium text-navy-900 hover:underline"
                           >
-                            <Linkedin className="h-3.5 w-3.5" /> LinkedIn
+                            <Link className="h-3.5 w-3.5" /> LinkedIn
                           </a>
                         )}
                       </div>
